@@ -1,0 +1,74 @@
+<animationset name="male_clothes" path='data/flare_resources/heros/male/clothes.png' frame_width='128' frame_height='128' img_width='4096' img_height='1024'>
+  <direction name='northwest'>
+    <action first='224' last='227' name='stance'></action>
+    <action first='228' last='235' name='running'></action>
+    <action first='236' last='239' name='melee'></action>
+    <action first='240' last='241' name='block'></action>
+    <action first='242' last='247' name='die'></action>
+    <action first='248' last='251' name='cast'></action>
+    <action first='252' last='255' name='bow'></action>
+  </direction>
+  <direction name='north'>
+    <action first='192' last='195' name='stance'></action>
+    <action first='196' last='203' name='running'></action>
+    <action first='204' last='207' name='melee'></action>
+    <action first='208' last='209' name='block'></action>
+    <action first='210' last='215' name='die'></action>
+    <action first='216' last='220' name='cast'></action>
+    <action first='220' last='223' name='bow'></action>
+  </direction>
+  <direction name='northeast'>
+    <action first='160' last='163' name='stance'></action>
+    <action first='164' last='171' name='running'></action>
+    <action first='172' last='175' name='melee'></action>
+    <action first='176' last='177' name='block'></action>
+    <action first='178' last='183' name='die'></action>
+    <action first='184' last='187' name='cast'></action>
+    <action first='188' last='191' name='bow'></action>
+  </direction>
+  <direction name='east'>
+    <action first='128' last='131' name='stance'></action>
+    <action first='132' last='139' name='running'></action>
+    <action first='140' last='143' name='melee'></action>
+    <action first='144' last='145' name='block'></action>
+    <action first='146' last='151' name='die'></action>
+    <action first='152' last='155' name='cast'></action>
+    <action first='156' last='159' name='bow'></action>
+  </direction>
+  <direction name='southeast'>
+    <action first='96' last='99' name='stance'></action>
+    <action first='100' last='107' name='running'></action>
+    <action first='108' last='111' name='melee'></action>
+    <action first='112' last='113' name='block'></action>
+    <action first='114' last='119' name='die'></action>
+    <action first='120' last='123' name='cast'></action>
+    <action first='124' last='127' name='bow'></action>
+  </direction>
+  <direction name='south'>
+    <action first='64' last='67' name='stance'></action>
+    <action first='68' last='75' name='running'></action>
+    <action first='76' last='79' name='melee'></action>
+    <action first='80' last='81' name='block'></action>
+    <action first='82' last='87' name='die'></action>
+    <action first='88' last='91' name='cast'></action>
+    <action first='92' last='95' name='bow'></action>
+  </direction>
+  <direction name='southwest'>
+    <action first='32' last='35' name='stance'></action>
+    <action first='36' last='43' name='running'></action>
+    <action first='44' last='45' name='melee'></action>
+    <action first='48' last='51' name='block'></action>
+    <action first='50' last='55' name='die'></action>
+    <action first='56' last='59' name='cast'></action>
+    <action first='60' last='63' name='bow'></action>
+  </direction>
+  <direction name='west'>
+    <action first='0' last='3' name='stance'></action>
+    <action first='4' last='11' name='running'></action>
+    <action first='12' last='15' name='melee'></action>
+    <action first='16' last='17' name='block'></action>
+    <action first='18' last='23' name='die'></action>
+    <action first='24' last='27' name='cast'></action>
+    <action first='28' last='31' name='bow'></action>
+  </direction>
+</animationset>

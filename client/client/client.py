@@ -8,6 +8,7 @@ from ui import LoginManager,ConnectManager,ChatWindowManager
 from net import GameClientFactory,GameClientProtocol
 from game.game import Game
 from game.monster import Monster
+from game.character import Character
 
 class Client:
 
@@ -22,7 +23,6 @@ class Client:
     self.game = Game()
 
   def process(self, data):
-    print data
     if data['type'] == 'events':
       for event in data['events']:
         self.process(event)
@@ -76,17 +76,19 @@ class Client:
       print data
     elif data['type'] == 'monsterattack':
       if self.game.monsters.has_key(data['name']):
-        title = self.game.monsters[data['name']].title
+        title = data['title']
         dam = data['dam']
         target = data['target']
         self.chatManager.add_message("%s hits %s for %s damage!" % (title,target,dam))
       print data
     elif data['type'] == 'monsterdie':
       if self.game.monsters.has_key(data['name']):
+        self.chatManager.add_message("%s dies!" % data['title'])
         del self.game.monsters[data['name']]
         # if this monster was the player's target, reset target and tell player to wait
         if data['name'] == self.game.player_target:
           self.game.player_target = None
+      print data
     elif data['type'] == 'playerchat':
       message = "<%s> %s" % (data['name'],data['message'])
       self.chatManager.add_message(message)

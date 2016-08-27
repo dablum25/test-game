@@ -17,7 +17,7 @@ class ConnectManager(Manager):
     UI_THEME = Theme({"font": "Lucida Grande",
                  "font_size": 8,
                  "text_color": [255, 255, 255, 255],
-                 "gui_color": [255, 0, 0, 255],
+                 "gui_color": [255, 255, 255, 255],
                  "input": {
                      "image": {
                          "source": "input.png",
@@ -101,7 +101,7 @@ class LoginManager(Manager):
     UI_THEME = Theme({"font": "Lucida Grande",
                  "font_size": 8,
                  "text_color": [255, 255, 255, 255],
-                 "gui_color": [255, 0, 0, 255],
+                 "gui_color": [255, 255, 255, 255],
                  "input": {
                      "image": {
                          "source": "input.png",
@@ -185,7 +185,7 @@ class ChatWindowManager(Manager):
     UI_THEME = Theme({"font": "Lucida Grande",
                  "font_size": 8,
                  "text_color": [255, 255, 255, 255],
-                 "gui_color": [255, 0, 0, 255],
+                 "gui_color": [255, 255, 255, 155],
                  "input": {
                      "image": {
                          "source": "input.png",

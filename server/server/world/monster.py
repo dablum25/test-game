@@ -2,7 +2,7 @@ import time
 
 class Monster:
 
-  def __init__(self, source, name, title, x, y, zone):
+  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm):
     
     self.source = source
     self.title = title
@@ -12,10 +12,19 @@ class Monster:
     self.zone = zone
     self.free_at = time.time() # next time monster will be free to perform another action
     self.spawn = None
-    self.stats = { 'hp': [5,5], 'mp': [0,0], 'hit': 1, 'dam': 0, 'arm': 1 }
     self.target = None
     self.fighting = False
-    # TODO: Monster item drops on death
+    
+    self.hp = hp
+    self.mp = mp
+    self.hit = hit
+    self.dam = dam
+    self.arm = arm
+
+
+  def reset(self):
+    
+    self.free_at = time.time() + 2.0
 
   def state(self):
 
@@ -23,7 +32,7 @@ class Monster:
 
   def free(self):
 
-    if time.time() - self.free_at > 1.0:
+    if time.time() - self.free_at > 2.0:
       return True
     else:
       return False

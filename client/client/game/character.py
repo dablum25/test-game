@@ -49,7 +49,7 @@ class Character:
     self.sprites['slash']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[78:84], 0.125, True))
     self.sprites['slash']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[91:97], 0.125, True))
     self.sprites['slash']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[104:110], 0.125, True))
-
+    
     self.sprites['wait']['east'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[117:118], 1, True))
     self.sprites['wait']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[130:131], 1, True))
     self.sprites['wait']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[143:144], 1, True))
@@ -124,7 +124,6 @@ class Character:
       self.action = 'die'
 
   def update(self, dt):
-    
     # Don't move if we are doing something else
     if self.action in [ 'slash', 'die', 'cast', 'thrust', 'die', 'bow' ]:
       return

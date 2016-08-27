@@ -2,6 +2,7 @@ import time
 import os,ConfigParser
 import random
 
+from db import Db
 from spawn import Spawn
 from player import Player
 from monster import Monster
@@ -61,9 +62,14 @@ def dpRoll():
 
 class Game:
 
-  def __init__(self):
+  def __init__(self, source):
+
+    self.db = Db(source)
+
     # Players table
     self.players = {}
+    for player in self.db.load_players():
+      self.players[player['name']] = Player(**player)
 
     # Monsters table
     self.monsters = {}
@@ -71,18 +77,29 @@ class Game:
 
     # Monster Spawn list
     self.spawns = []
+    for spawn in self.db.load_spawns():
+      self.spawns.append(Spawn(**spawn))
 
     # Items table
     self.items = {}
+    for item in self.db.load_items():
+      self.items[item['name']] = Item(**item)
 
     # Spells table
     self.spells = {}
+    for spell in self.db.load_spells():
+      self.spells[spell['name']] = Spell(**spell)
 
     # Containers table
     self.containers = {}
+    for container in self.db.load_containers():
+      self.containers[container['name']] = Container(**container)
 
     # Zones table
     self.zones = {}
+    for zone in self.db.load_zones():
+      self.zones[zone['name']] = Zone(**zone)
+
 
     # Events queue
     self.events = []
@@ -165,15 +182,15 @@ class Game:
 
     return player_name
   
-  def add_monster(self, monster, spawn, source, title, x, y, zone, myspawn):
+  def add_monster(self, spawn, source, title, x, y, zone, hp, mp, hit, arm, dam):
    
     # New player data
     name = "monster-%s" % self.monster_index
     self.monster_index += 1
 
     # Create monster 
-    self.monsters[name] = monster(source, name, title, x, y, zone)
-    self.monsters[name].spawn = myspawn
+    self.monsters[name] = Monster(name=name, source=source, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam)
+    self.monsters[name].spawn = spawn
 
     # Add addmonster event
     self.events.append({ 'type': 'addmonster', 'source': source, 'title': title, 'name': name, 'x': x, 'y': y, 'zone': zone })
@@ -213,7 +230,7 @@ class Game:
     # If player is free, then perform action
     if self.players[player_name].free():
       if self.zones[zone].open_at(endx,endy):
-        self.players[player_name].free_at = time.time() + 1.0
+        self.players[player_name].reset()
         send_event = True
 
     if send_event:
@@ -278,14 +295,14 @@ class Game:
   def get_player_dam(self, player_name):
 
     # base damage
-    base_damage = self.players[player_name].stats['dam']
+    base_damage = self.players[player_name].dam
     weapon_damage = 0
     
     for item_name,item in self.items.items():
       if item.equipped and item.slot == 'weapon' and item.player == player_name:
+        print item.player,'has',item_name,item.stats['dam']
         weapon_damage = item.stats['dam']
     
-    print base_damage,weapon_damage
     return base_damage + weapon_damage
 
   def loop(self):
@@ -311,8 +328,11 @@ class Game:
               direction = 'north'
             if y < 0:
               direction = 'south'
-
+          
           if x == 0 and y == 0:
+            continue
+
+          if not self.zones[monster.zone].open_at(monster.x + x, monster.y + y):
             continue
           
           # Don't wanter more than 10 spaces
@@ -322,7 +342,7 @@ class Game:
           #if abs(monster.y - y) > 10:
           #  continue
 
-          monster.free_at = time.time() + 1.0
+          monster.reset()
           self.events.append({'type': 'monstermove', 'name': name, 'zone': monster.zone, 'direction': direction, 'start': (monster.x,monster.y), 'end': (monster.x + x, monster.y + y)})
           monster.x += x
           monster.y += y
@@ -330,22 +350,17 @@ class Game:
     # Update battles
     for name, player in self.players.items():
       if player.free() and player.target and player.fighting:
-        player.free_at = time.time() + 1.0
-        player_tohit = player.stats['hit']
+        player.reset()
         player_dam = self.get_player_dam(name)
 
-        for weapon in self.items.values():
-          if weapon.slot == 'weapon' and weapon.player == name and weapon.equipped:
-            player_dam = weapon.stats['dam']
-        
-        monster_arm = player.target.stats['arm']
+        monster_arm = player.target.arm
 
         # RULES
         # hit succeeds if d20 + player_tohit > monster_arm
         # d20 roll of 1 always failure
         # d20 roll of 20 always hit
         # damage = d<player damage>
-        hitroll = random.randint(0,20) + player_tohit
+        hitroll = random.randint(0,20) + player.hit
         hit_succeeds = False
         if hitroll == 1:
           pass # miss
@@ -356,34 +371,34 @@ class Game:
           # hit
           hit_succeeds = True
         
-        hit_damage = 0
+        hit_damage = random.randint(0,player_dam)
         if hit_succeeds:
-          hit_damage = random.randint(0,player_dam)
-          player.target.stats['hp'][0] -= hit_damage
+          player.target.hp[0] -= hit_damage
+          self.events.append({ 'type': 'playerslash', 'name': name, 'zone': player.zone, 'dam': hit_damage, 'target': player.target.title })
+
+        print "Player hit = %s, monster arm = %s, Hitroll = %s. Player dam = %s, dam roll = %s." % ( player.hit, monster.arm, hitroll, player_dam, hit_damage )
         
-        self.events.append({ 'type': 'playerslash', 'name': name, 'zone': player.zone, 'dam': hit_damage, 'target': player.target.title })
+      # Are we dead?
+      if player.hp[0] <= 0:
+        self.events.append({ 'type': 'playerdie', 'name': name, 'zone': player.zone })
+     
+        # Free player after 5 seconds
+        player.free_at = time.time() + 5
         
-        # Are we dead?
-        if player.stats['hp'][0] <= 0:
-          self.events.append({ 'type': 'playerdie', 'name': name, 'zone': player.zone })
-       
-          # Free player after 5 seconds
-          player.free_at = time.time() + 5
-          
-          # TODO:
-          # - respawn player
+        # TODO:
+        # - respawn player
         
-        # if target gone, reset to none
+      # if target gone, reset to none
+      if player.target:
         if player.target.name not in self.monsters.keys():
           player.target = None
-          self.events.append({'type': 'playerstop', 'name': name})
              
     for name, monster in self.monsters.items():
       if monster.free() and monster.target and monster.fighting:
-        monster.free_at = time.time() + 1.0
-        monster_tohit = monster.stats['hit']
-        monster_dam = monster.stats['dam']
-        player_arm = monster.target.stats['arm']
+        monster.reset()
+        monster_tohit = monster.hit
+        monster_dam = monster.dam
+        player_arm = monster.target.arm
         
         hitroll = random.randint(0,20) + monster_tohit
         hit_succeeds = False
@@ -399,24 +414,27 @@ class Game:
         hit_damage = 0
         if hit_succeeds:
           hit_damage = random.randint(0,monster_dam)
-          monster.target.stats['hp'][0] -= hit_damage
+          monster.target.hp[0] -= hit_damage
         
-        self.events.append({ 'type': 'monsterattack', 'name': name, 'zone': monster.zone, 'dam': hit_damage, 'target': monster.target.title })
+        self.events.append({ 'type': 'monsterattack', 'title': monster.title, 'name': name, 'zone': monster.zone, 'dam': hit_damage, 'target': monster.target.title })
         
-        # Are we dead?
-        if monster.stats['hp'][0] <= 0:
-          self.events.append({ 'type': 'monsterdie', 'name': name, 'zone': monster.zone })
-          monster.spawn.spawn_count -= 1
+      # Are we dead?
+      if monster.hp[0] <= 0:
+        self.events.append({ 'type': 'monsterdie', 'title': monster.title, 'name': name, 'zone': monster.zone })
+        monster.spawn.spawn_count -= 1
 
-          for p in self.players.values():
-            if p.target == monster:
-              p.target = None
+        for n,p in self.players.items():
+          if p.target == monster:
+            p.target = None
+            if p.fighting:
+              p.fighting = False
+              self.events.append({'type': 'playerstop', 'name': n, 'zone': p.zone})
 
-          del self.monsters[name]
-          
-          # TODO:
-          # - monster drops stuff
-          # - player gains xp
+        del self.monsters[name]
+        
+        # TODO:
+        # - monster drops stuff
+        # - player gains xp
        
        
     # Keepalive tick
@@ -430,7 +448,7 @@ class Game:
 
     self.last_event = len(self.events)
 
-  def load_zones(self):
+  def load_from_ini_zones(self):
 
     zone_config = ConfigParser.RawConfigParser()
     zone_config.read('data/zones.ini')
@@ -444,7 +462,7 @@ class Game:
 
       self.zones[zone] = Zone(**values)
 
-  def load_players(self):
+  def load_from_ini_players(self):
     
     player_config = ConfigParser.RawConfigParser()
     player_config.read('data/players.ini')
@@ -468,7 +486,7 @@ class Game:
 
       self.players[player] = Player(**values)
 
-  def load_spawns(self):
+  def load_from_ini_spawns(self):
     
     spawn_config = ConfigParser.RawConfigParser()
     spawn_config.read('data/spawns.ini')
@@ -491,7 +509,7 @@ class Game:
        
       self.spawns.append(Spawn(**values))
   
-  def load_items(self):
+  def load_from_ini_items(self):
     
     item_config = ConfigParser.RawConfigParser()
     item_config.read('data/items.ini')
@@ -511,7 +529,7 @@ class Game:
 
       self.items[item] = Item(**values)
 
-  def load_spells(self):
+  def load_from_ini_spells(self):
 
     spell_config = ConfigParser.RawConfigParser()
     spell_config.read('data/spells.ini')
@@ -524,7 +542,7 @@ class Game:
       
       self.spells[spell] = Spell(**values)
 
-  def load_containers(self):
+  def load_from_ini_containers(self):
     
     container_config = ConfigParser.RawConfigParser()
     container_config.read('data/containers.ini')

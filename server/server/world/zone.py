@@ -4,8 +4,6 @@ class Zone:
 
   def __init__(self, name, source, title):
 
-    print "Loading zone %s" % name 
-
     self.name = name
     self.source = source
     self.title  = title
@@ -13,20 +11,24 @@ class Zone:
     # Logic to load zone file
     self.data = pytmx.TiledMap(source)
     
-    self.width = 0
-    self.height = 0
+    self.width = self.data.width
+    self.height = self.data.height
 
-    # TODO: Store spawn points as objects in zone?
-    
-
+    self.blocked = self.data.layers.index(self.data.get_layer_by_name('blocked'))
+  
   def open_at(self, x, y):
     '''
     Determine if x,y are open for movement.
     '''
-    open_here = True
-    for tx,ty,tg in self.data.get_layer_by_name('blocked').iter_data():
-      if tx == x and ty == y and tg > 0:
-        open_here = False
-    return open_here
-
-
+    if x > self.width - 1:
+      return False
+    elif x < 0:
+      return False
+    elif y > self.height - 1:
+      return False
+    elif y < 0:
+      return False
+    elif self.data.get_tile_gid(x, self.height - y - 1, self.blocked) > 0:
+      return False
+    else:
+      return True

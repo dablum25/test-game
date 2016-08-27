@@ -1,14 +1,12 @@
 class Item:
 
-  def __init__(self, source, name, title, player, slot, container, hit, dam, arm):
-
-    print "Loading item %s" % name
+  def __init__(self, source, name, title, player, slot, container, hit, dam, arm, equipped):
 
     self.title = title
     self.source = source
     self.name = name
     self.player = player
-    self.equipped = False
+    self.equipped = equipped
     self.container = container
     self.slot = slot # 'head', 'weapon', 'body', 'feet' or None
     self.stats = { 'weight': 0, 'dam': dam, 'hit': hit, 'arm': arm }

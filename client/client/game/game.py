@@ -56,10 +56,10 @@ class Game:
       else:
         
         for x, y, image in layer.tiles():
-          y = self.zone.height - y
-          if x not in range(self.players[self.player_name].x - 10, self.players[self.player_name].x + 10):
+          y = self.zone.height - y - 1
+          if x not in range(self.players[self.player_name].x - 12, self.players[self.player_name].x + 12):
             continue
-          if y not in range(self.players[self.player_name].y - 10, self.players[self.player_name].y + 10):
+          if y not in range(self.players[self.player_name].y - 12, self.players[self.player_name].y + 12):
             continue
           image.blit(x * self.zone.tilewidth - self.offset[0], y  * self.zone.tileheight - self.offset[1])
 
