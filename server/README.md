@@ -10,6 +10,7 @@ TODO:
 * Dividing treasure
 * Crafting
 * Define monster, NPC, player spawn points on zone map. Define warps on zone map. 
+* Warp to bordering zone when edge reached
 * content
 * more content
 * even more content
