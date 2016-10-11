@@ -9,6 +9,8 @@ class Monster:
 
     raw = pyglet.image.load(source)
     grid = pyglet.image.ImageGrid(raw, 4, 3)
+    self.frame_w = grid[0].width
+    self.frame_h = grid[0].height
     self.frame = 0
     self.action = 'wait'
     self.direction = 'south'
@@ -21,12 +23,20 @@ class Monster:
     self.spritex = self.x * 32
     self.spritey = self.y * 32
 
+    self.label = pyglet.text.Label(self.title,
+                                   font_name='Times New Roman',
+                                   font_size=12,
+                                   color=(255,0,0,255),
+                                   x=self.spritex,
+                                   y=self.spritey,
+                                   anchor_x="center",)
+
     # Frames within grid (e,s,w,n)
     # wait 1:1, 4:4, 7:7, 10:10
     # walk 0:2, 3:5, 6:8, 9:11
 
     self.sprites = {}
-    for a in [ 'wait', 'walk', ]:
+    for a in [ 'wait', 'walk', 'attack' ]:
       self.sprites[a] = {}
       for d in [ 'east', 'south', 'west', 'north' ]:
         self.sprites[a][d] = []
@@ -41,6 +51,11 @@ class Monster:
     self.sprites['walk']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[3:5], 0.125, True))
     self.sprites['walk']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[6:8], 0.125, True))
     self.sprites['walk']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[9:11], 0.125, True))
+    
+    self.sprites['attack']['east'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[0:2], 0.125, True))
+    self.sprites['attack']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[3:5], 0.125, True))
+    self.sprites['attack']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[6:8], 0.125, True))
+    self.sprites['attack']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[9:11], 0.125, True))
 
     # Scheduel our update frequency
     pyglet.clock.schedule_interval(self.update, 1/120.0)
@@ -64,7 +79,29 @@ class Monster:
       self.destx -= 1
       self.direction = 'west'
 
+  def attack(self):
+    
+    if self.action == 'wait':
+      self.action = 'attack'
+      pyglet.clock.schedule_once(self.wait,1.0)
+
+  def wait(self,dt=0):
+
+    self.action = 'wait'
+
+  def die(self):
+    
+    self.action = 'wait'
+
+  def stop(self):
+
+    self.action = 'wait'    
+
   def update(self, dt):
+    
+    # Don't move if we are doing something else
+    if self.action in [ 'attack', 'die', 'cast' ]:
+      return
     
     if self.direction == 'north':
       if self.spritey < self.desty * 32:
@@ -104,12 +141,17 @@ class Monster:
      
 
   def draw(self, offset, target):
-    offset_x = offset[0]
-    offset_y = offset[1]
-    self.sprites[self.action][self.direction].set_position(self.spritex - 16 - offset_x, self.spritey - offset_y)
+    draw_x = self.spritex - offset[0]
+    draw_y = self.spritey - offset[1]
+    self.sprites[self.action][self.direction].set_position(draw_x,draw_y)
     if target:
-      self.sprites[self.action][self.direction].color = (255,0,0)
+      self.label.bold = True
+      self.label.font_size = 14
     else:
-      self.sprites[self.action][self.direction].color = (255,255,255)
+      self.label.bold = False
+      self.label.font_size = 12
 
     self.sprites[self.action][self.direction].draw()
+    self.label.x = self.spritex - offset[0] + (self.sprites[self.action][self.direction].width/2)
+    self.label.y = self.spritey - offset[1] + self.sprites[self.action][self.direction].height
+    self.label.draw()

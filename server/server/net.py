@@ -103,8 +103,9 @@ class GameProtocol(basic.LineReceiver):
       if self.authenticated and self.player_name:
         events = self.factory.world.get_events(self.player_name, self.last_event)
         events_data = self.prepare(events)
-        self.transport.write(events_data)
-        self.last_event = len(self.factory.world.events)
+        if events_data:
+          self.transport.write(events_data)
+          self.last_event = len(self.factory.world.events)
       
 
 

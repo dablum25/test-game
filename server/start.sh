@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python -c "import server; server.start('data/gloomsum.db')"
+python -c "import server; server.start('gloomsum.db')"

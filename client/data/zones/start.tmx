@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="20" tilewidth="32" tileheight="32" nextobjectid="4">
- <tileset firstgid="1" source="../lpc_resources/LPC_Terrain/Terrain.tsx"/>
+ <tileset firstgid="1" source="../LPC_Terrain/Terrain.tsx"/>
  <tileset firstgid="1025" name="meta" tilewidth="32" tileheight="32" tilecount="4" columns="2">
   <image source="../metatiles.png" width="64" height="64"/>
  </tileset>
  <tileset firstgid="1029" name="bridges" tilewidth="32" tileheight="32" tilecount="42" columns="6">
-  <image source="../lpc_resources/LPC Base Assets/tiles/bridges.png" width="192" height="224"/>
+  <image source="../LPC Base Assets/tiles/bridges.png" width="192" height="224"/>
  </tileset>
  <tileset firstgid="1071" name="trunk" tilewidth="32" tileheight="32" tilecount="18" columns="6">
-  <image source="../lpc_resources/LPC Base Assets/tiles/trunk.png" width="192" height="96"/>
+  <image source="../LPC Base Assets/tiles/trunk.png" width="192" height="96"/>
  </tileset>
  <tileset firstgid="1089" name="treetop" tilewidth="32" tileheight="32" tilecount="42" columns="6">
-  <image source="../lpc_resources/LPC Base Assets/tiles/treetop.png" width="192" height="224"/>
+  <image source="../LPC Base Assets/tiles/treetop.png" width="192" height="224"/>
  </tileset>
  <tileset firstgid="1131" name="house" tilewidth="32" tileheight="32" tilecount="63" columns="9">
-  <image source="../lpc_resources/LPC Base Assets/tiles/house.png" width="288" height="224"/>
+  <image source="../LPC Base Assets/tiles/house.png" width="288" height="224"/>
  </tileset>
  <tileset firstgid="1194" name="signs" tilewidth="32" tileheight="32" tilecount="6" columns="3">
-  <image source="../lpc_resources/LPC Base Assets/tiles/signs.png" width="96" height="64"/>
+  <image source="../LPC Base Assets/tiles/signs.png" width="96" height="64"/>
  </tileset>
  <layer name="Ground" width="20" height="20">
   <data encoding="csv">

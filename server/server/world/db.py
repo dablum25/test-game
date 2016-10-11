@@ -21,10 +21,28 @@ class Db:
 
     return zones
 
-  def load_spawns(self):
+  def load_warps(self):
     cursor = self.conn.cursor()
 
-    cursor.execute('SELECT * FROM spawns')
+    cursor.execute('SELECT * FROM warps')
+    
+    zones = []
+    for zone in cursor.fetchall():
+      
+      zones.append({ 'start_zone': zone[0],
+                     'start_x': zone[1],
+                     'start_y': zone[2],
+                     'end_zone': zone[3],
+                     'end_x': zone[4],
+                     'end_y': zone[5],})
+
+    return zones
+
+
+  def load_monster_spawns(self):
+    cursor = self.conn.cursor()
+
+    cursor.execute('SELECT * FROM monster_spawns')
     
     spawns = []
     for spawn in cursor.fetchall():
@@ -44,23 +62,65 @@ class Db:
 
     return spawns
 
-  def load_containers(self):
+  def load_npc_spawns(self):
     cursor = self.conn.cursor()
 
-    cursor.execute('SELECT * FROM containers')
+    cursor.execute('SELECT * FROM npc_spawns')
     
-    containers = []
-    for container in cursor.fetchall():
+    spawns = []
+    for spawn in cursor.fetchall():
       
-      containers.append({ 'name': container[0],
-                          'title': container[1],
-                          'x': container[2],
-                          'y': container[3],
-                          'zone': container[4],
-                          'source_open': container[5],
-                          'source_closed': container[6],})
+      spawns.append({ 'name': spawn[0],
+                      'title': spawn[1],
+                      'gender': spawn[2],
+                      'body': spawn[3], 
+                      'hairstyle': spawn[4],
+                      'haircolor': spawn[5],
+                      'armor': spawn[6],
+                      'head': spawn[7],
+                      'weapon': spawn[8],
+                      'zone': spawn[9],
+                      'x': spawn[10],
+                      'y': spawn[11],
+                      'spawn_max': spawn[12],
+                      'hp': spawn[13],
+                      'mp': spawn[14],
+                      'hit': spawn[15],
+                      'dam': spawn[16],
+                      'arm': spawn[17],
+                      'shop': spawn[18],
+                      'quest': spawn[19],
+                      'villan': bool(spawn[20]),})
 
-    return containers
+    return spawns
+
+  def load_shops(self):
+    cursor = self.conn.cursor()
+
+    cursor.execute('SELECT * FROM shops')
+    
+    shops = []
+    for shop in cursor.fetchall():
+      
+      shops.append({ 'name': shop[0],
+                     'title': shop[1],
+                     'itemset': shop[2],})
+
+    return shops
+  
+  def load_quests(self):
+    cursor = self.conn.cursor()
+
+    cursor.execute('SELECT * FROM quests')
+    
+    quests = []
+    for quest in cursor.fetchall():
+      
+      quests.append({ 'name': quest[0],
+                      'title': quest[1],
+                      'dialog': quest[2],})
+
+    return quests
 
   def load_items(self):
     cursor = self.conn.cursor()
@@ -72,14 +132,15 @@ class Db:
       
       items.append({ 'name': item[0],
                      'title': item[1],
-                     'source': item[2],
+                     'gear_type': item[2],
                      'slot': item[3],
                      'player': item[4],
                      'container': item[5],
                      'dam': item[6],
                      'hit': item[7],
                      'arm': item[8],
-                     'equipped': bool(item[9]),})
+                     'equipped': bool(item[9]),
+                     'icon': item[10],})
 
     return items
 
@@ -93,7 +154,6 @@ class Db:
     
     spells = []
     for spell in cursor.fetchall():
-      
       spells.append({ 'name': spell[0],
                       'title': spell[1],
                       'level': spell[2],
@@ -110,28 +170,10 @@ class Db:
                       'caster_hit': spell[13],
                       'caster_dam': spell[14],
                       'caster_arm': spell[15],
-                      'description': spells[16],})
+                      'description': spell[16],
+                      'mana_cost': spell[17],})
 
     return spells
-
-  def load_warps(self):
-    cursor = self.conn.cursor()
-
-    cursor.execute('SELECT * FROM warps')
-    
-    warps = []
-    for warp in cursor.fetchall():
-      
-      warps.append({ 'name': warp[0],
-                     'start_zone': warp[1],
-                     'end_zone': warp[2],
-                     'start_x': warp[2],
-                     'start_y': warp[2],
-                     'end_x': warp[2],
-                     'end_y': warp[2],})
-
-    return warps
-
 
   def load_players(self):
 
@@ -144,17 +186,20 @@ class Db:
       
       players.append({ 'name': player[0],
                        'title': player[1],
-                       'source': player[2],
-                       'zone': player[3],
-                       'x': player[4],
-                       'y': player[5],
-                       'password': player[6],
-                       'spells': player[7].split(','),
-                       'hit': player[8],
-                       'arm': player[9],
-                       'dam': player[10],
-                       'hp': player[11],
-                       'mp': player[12],})
+                       'gender': player[2],
+                       'body': player[3],
+                       'hairstyle': player[4],
+                       'haircolor': player[5],
+                       'zone': player[6],
+                       'x': player[7],
+                       'y': player[8],
+                       'password': player[9],
+                       'spells': player[10].split(','),
+                       'hit': player[11],
+                       'arm': player[12],
+                       'dam': player[13],
+                       'hp': player[14],
+                       'mp': player[15],})
 
     return players
 
@@ -165,13 +210,12 @@ class Db:
 
 if __name__ == '__main__':
 
-  db = Db('data/gloomsum.db')
+  db = Db('gloomsum.db')
 
   print db.load_players()
   print db.load_spells()
   print db.load_zones()
   print db.load_spawns()
   print db.load_items()
-  print db.load_containers()
   print db.load_warps()
 

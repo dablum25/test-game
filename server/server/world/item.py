@@ -1,17 +1,20 @@
 class Item:
 
-  def __init__(self, source, name, title, player, slot, container, hit, dam, arm, equipped):
+  def __init__(self, name, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon):
 
     self.title = title
-    self.source = source
     self.name = name
     self.player = player
     self.equipped = equipped
     self.container = container
-    self.slot = slot # 'head', 'weapon', 'body', 'feet' or None
-    self.stats = { 'weight': 0, 'dam': dam, 'hit': hit, 'arm': arm }
+    self.gear_type = gear_type # 'none', 'leather', 'chain', 'plate', 'hat', 'clothhood', 'chainhood', 'chainhat', 'helm', 'sword', 'spear', 'wand', 'bow'
+    self.slot = slot # 'head', 'weapon', 'armor', or 'none'
+    self.hit = hit
+    self.dam = dam
+    self.arm = arm
+    self.icon = icon
 
   def state(self):
     
-    return { 'title': self.title, 'name': self.name, 'source': self.source, 'player': self.player, 'slot': self.slot, 'equipped': self.equipped, 'stats': self.stats }
+    return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm }
 

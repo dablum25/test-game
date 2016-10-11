@@ -1,106 +1,30 @@
 import time
 import os,ConfigParser
 import random
+import math
+
+from twisted.internet import reactor
 
 from db import Db
-from spawn import Spawn
+from monsterspawn import MonsterSpawn
+from npcspawn import NpcSpawn
 from player import Player
 from monster import Monster
-from zone import Zone
+from zone import Zone,ZoneWithObjects
 from spell import Spell
 from container import Container
 from item import Item
-
-def d4roll(count):
-
-  roll = 0
-  for r in range(0, count):
-    roll += random.randint(1,4)
-
-  return roll
-
-def d6roll(count=1):
-
-  roll = 0
-  for r in range(0, count):
-    roll += random.randint(1,6)
-
-  return roll
-
-
-def d8roll(count=1):
-
-  roll = 0
-  for r in range(0, count):
-    roll += random.randint(1,8)
-
-  return roll
-
-
-def d10roll(count=1):
-
-  roll = 0
-  for r in range(0, count):
-    roll += random.randint(1,10)
-
-  return roll
-
-
-def d20roll(count=1):
-  
-  roll = 0
-  for r in range(0, count):
-    roll += random.randint(1,20)
-
-  return roll
-
-
-def dpRoll():
-
-  return random.randint(1,100)
-
+from npc import Npc
+from warp import Warp
+from shop import Shop
+from quest import Quest
 
 class Game:
 
   def __init__(self, source):
 
     self.db = Db(source)
-
-    # Players table
-    self.players = {}
-    for player in self.db.load_players():
-      self.players[player['name']] = Player(**player)
-
-    # Monsters table
-    self.monsters = {}
-    self.monster_index = 0 # for randomly spawned monsters
-
-    # Monster Spawn list
-    self.spawns = []
-    for spawn in self.db.load_spawns():
-      self.spawns.append(Spawn(**spawn))
-
-    # Items table
-    self.items = {}
-    for item in self.db.load_items():
-      self.items[item['name']] = Item(**item)
-
-    # Spells table
-    self.spells = {}
-    for spell in self.db.load_spells():
-      self.spells[spell['name']] = Spell(**spell)
-
-    # Containers table
-    self.containers = {}
-    for container in self.db.load_containers():
-      self.containers[container['name']] = Container(**container)
-
-    # Zones table
-    self.zones = {}
-    for zone in self.db.load_zones():
-      self.zones[zone['name']] = Zone(**zone)
-
-
+    
     # Events queue
     self.events = []
 
@@ -110,21 +34,98 @@ class Game:
     # For logging events
     self.last_event = 0
 
+    # Players table
+    self.players = {}
+    for player in self.db.load_players():
+      self.players[player['name']] = Player(world=self,**player)
+
+    # Monsters table
+    self.monsters = {}
+    self.monster_index = 0 # for randomly spawned monsters
+    
+    # Npcs table
+    self.npcs = {}
+    self.npc_index = 0
+    
+    # Containers table
+    self.containers = {}
+    self.container_index = 0
+
+    # For generated items
+    self.item_index = 0
+    
+    # Zones table
+    self.zones = {}
+    for zone in self.db.load_zones():
+      self.zones[zone['name']] = Zone(**zone)
+      #self.zones[zone['name']] = ZoneWithObjects(world=self,**zone)
+    
+    # Monster Spawn list
+    self.monster_spawns = []
+    for spawn in self.db.load_monster_spawns():
+      self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
+
+    # Items table
+    self.items = {}
+    for item in self.db.load_items():
+      self.items[item['name']] = Item(**item)
+
+    # Shops table
+    self.shops = {}
+    for shop in self.db.load_shops():
+      self.shops[shop['name']] = Shop(world=self,**shop)
+
+    # Quests table
+    self.quests = {}
+    for quest in self.db.load_quests():
+      self.quests[quest['name']] = Quest(world=self,**quest)
+
+    # Spells table
+    self.spells = {}
+    for spell in self.db.load_spells():
+      self.spells[spell['name']] = Spell(**spell)
+
+    # Warps table
+    self.warps = []
+    for warp in self.db.load_warps():
+      self.warps.append(Warp(**warp))
+
+    # NPC Spawn list
+    self.npc_spawns = []
+    for spawn in self.db.load_npc_spawns():
+      self.npc_spawns.append(NpcSpawn(world=self,**spawn))
+    
+
   def process_data(self, player_name, data, protocol=None):
     
     send_now = None
 
-    if data['action'] == 'walk':
-      self.walk(player_name, data['direction'])
+    if data['action'] == 'activate':
+      send_now = self.player_activate(player_name)
     
-    elif data['action'] == 'attack':
-      self.player_attack(player_name, data['target'])
-
     elif data['action'] == 'equip':
-      self.player_equip(player_name, data['item'])
+      self.player_equip(player_name, data['name'])
 
     elif data['action'] == 'unequip':
-      self.player_unequip(player_name, data['item'])
+      self.player_unequip(player_name, data['name'])
+   
+    elif data['action'] == 'buy':
+      send_now = self.player_buy(player_name, data['item'])
+
+    elif data['action'] == 'sell':
+      self.player_sell(player_name, data['item'])
+  
+    elif data['action'] == 'drop':
+      self.player_drop(player_name, data['item'])
+
+    elif data['action'] == 'use':
+      self.player_use(player_name, data['use'])
+    
+    elif data['action'] == 'settarget':
+      send_now = self.set_player_target(player_name, data['x'], data['y'])
+    
+    elif data['action'] == 'goto': 
+      self.player_goto(player_name, data['x'], data['y'])
 
     elif data['action'] == 'cast':
       self.player_cast(player_name, data['spell'])
@@ -136,29 +137,92 @@ class Game:
       self.player_disengage(player_name)
 
     elif data['action'] == 'inventory':
-      send_now =  self.player_inventory(player_name)
+      send_now = self.player_inventory(player_name)
+    
+    elif data['action'] == 'playerstats':
+      send_now = self.player_stats(player_name)
 
     elif data['action'] == 'refresh':
-      
-      zone_name = self.players[player_name].zone
-      zone_source = self.zones[zone_name].source
+      send_now = self.refresh(player_name)
 
-      send_now = { 'type': 'refresh', 'player_name': player_name, 'zone': zone_name, 'zone_source': zone_source, 'players': {}, 'monsters': {}, 'inventory': {}  }
-      
-      # Add players to send_now dataset
-      for k,v in self.players.items():
-        if v.zone == zone_name and v.online:
-          send_now['players'][k] = v.state()
+    # Triggers
+    if self.players[player_name].trigger_refresh:
+      send_now = self.refresh(player_name)
+      self.players[player_name].trigger_refresh = False
     
-      # Add monsters to send_now dataset
-      for k,v in self.monsters.items():
-        if v.zone == zone_name:
-          send_now['monsters'][k] = v.state()
+    # Triggers
+    #if self.players[player_name].trigger_statsupdate:
+    #  send_now = self.player_stats(player_name)
+    #  self.players[player_name].trigger_statsupdate = False
     
-      # Add inventory items to send_now dataset
-      for k,v in self.items.items():
-        if v.player == player_name:
-          send_now['inventory'][k] = v.state()
+    
+    return send_now
+
+  def player_stats(self, player_name):
+
+    player = self.players[player_name]
+    
+    stats = { "title": player.title, "hit": self.get_player_hit(player_name), "dam": self.get_player_dam(player_name), "arm": self.get_player_arm(player_name), "hp": player.hp, "mp": player.mp, "gold": player.gold }
+  
+    return { "type": "playerstats", "stats": stats }
+
+  def add_monster_spawn(self, data):
+    pass
+
+  def add_npc_spawn(self, data):
+    pass
+
+  def add_zone(self, data):
+    pass
+
+  def add_shop(self, data):
+    pass
+
+  def add_item(self, data):
+    pass
+
+  def add_warp(self, data):
+    pass
+
+  def add_spell(self, data):
+    pass
+
+  def add_quest(self, data):
+    pass
+
+  def player_goto(self, player_name, x, y):
+    player = self.players[player_name]
+    zone = self.zones[player.zone]
+    start = player.x,player.y
+    end = x,y 
+    player.path = zone.get_path(start,end)
+
+  def refresh(self, player_name):
+
+    zone_name = self.players[player_name].zone
+    zone_source = self.zones[zone_name].source
+
+    send_now = { 'type': 'refresh', 'player_name': player_name, 'zone': zone_name, 'zone_source': zone_source, 'players': {}, 'monsters': {}, 'npcs': {}, 'containers': {} }
+    
+    # Add players to send_now dataset
+    for k,v in self.players.items():
+      if v.zone == zone_name and v.online:
+        send_now['players'][k] = v.state()
+  
+    # Add monsters to send_now dataset
+    for k,v in self.monsters.items():
+      if v.zone == zone_name:
+        send_now['monsters'][k] = v.state()
+    
+    # Add npcs to send_now dataset
+    for k,v in self.npcs.items():
+      if v.zone == zone_name:
+        send_now['npcs'][k] = v.state()
+  
+    # Add containers to send_now dataset
+    for k,v in self.containers.items():
+      if v.zone == zone_name:
+        send_now['containers'][k] = v.state()
     
     return send_now
 
@@ -181,6 +245,76 @@ class Game:
     self.events.append(event)
 
     return player_name
+
+  def cleanup_monster(self, monster):
+    # drop monster
+    self.events.append({'type': 'dropmonster', 'name': monster.name, 'title': monster.title, 'zone': monster.zone })
+    
+    # create container object holding monster treasure
+    name = "container-%s" % self.container_index 
+    self.container_index += 1
+    title = "Remains of %s" % monster.title
+    x = monster.x
+    y = monster.y
+    zone = monster.zone
+    source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corps?
+
+    self.containers[name] = Container(title, name, x, y, zone, source, 32, 32, 0, 0)
+
+    # Generate dropped items
+    iname = "item-%s" % self.item_index
+    self.items[iname] = Item(iname, "Monster parts", None, None, None, name, 0, 0, 0, False, 'data/icons/monsterparts.png')
+    self.item_index += 1
+
+    iname = "item-%s" % self.item_index
+    self.items[iname] = Item(iname, "Hat", 'hat', 'head', None, name, 0, 0, 0, False, 'data/icons/hat.png')
+    self.item_index += 1
+    
+    self.events.append({'type': 'addcontainer', 'name': name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
+    
+    # clean up container after 2 min
+    reactor.callLater(120.0, self.cleanup_container, name)
+    
+    # Really delete monster
+    monster.spawn.spawn_count -= 1
+    del self.monsters[monster.name]
+
+
+  def cleanup_npc(self, npc):
+    # drop npc
+    self.events.append({'type': 'dropnpc', 'name': npc.name, 'title': npc.title, 'zone': npc.zone })
+    
+    npc.spawn.spawn_count -= 1
+
+    del self.npcs[npc.name]
+
+  def cleanup_container(self, container_name):
+
+    title = self.containers[container_name].title
+    zone  = self.containers[container_name].zone
+
+    self.events.append({'type': 'dropcontainer', 'name': container_name, 'title': title, 'zone': zone})
+    
+    del self.containers[container_name]
+     
+  def respawn_player(self, player):
+    
+    self.events.append({ 'type': 'dropplayer', 'name': player.name, 'zone': player.zone })
+    
+    # Add addplayer event
+    event = { 'type': 'addplayer' }
+    player.hp[0] = player.hp[1]
+    player.mode = 'wait'
+    player.x = 0
+    player.y = 0
+    player.spritex = 0
+    player.spritey = 0
+    player.destx = 0
+    player.desty = 0
+    event.update(player.state())
+    self.events.append(event)
+    
+    player.trigger_refresh = True
   
   def add_monster(self, spawn, source, title, x, y, zone, hp, mp, hit, arm, dam):
    
@@ -189,22 +323,75 @@ class Game:
     self.monster_index += 1
 
     # Create monster 
-    self.monsters[name] = Monster(name=name, source=source, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam)
+    self.monsters[name] = Monster(name=name, source=source, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam, world=self)
     self.monsters[name].spawn = spawn
 
     # Add addmonster event
     self.events.append({ 'type': 'addmonster', 'source': source, 'title': title, 'name': name, 'x': x, 'y': y, 'zone': zone })
 
+  def monster_die(self, name):
+
+    self.events.append({ 'type': 'monsterdie', 'name': name, 'zone': self.monster[name].zone })
+    
   def remove_monster(self, name):
+    
+    self.events.append({ 'type': 'dropmonster', 'name': name, 'zone': self.monster[name].zone })
     
     self.monsters[name].spawn.spawn_count -= 1
     del self.monsters[name]
+
+  def add_npc(self, spawn, gender, body, hairstyle, haircolor, armor, head, weapon, title, x, y, zone, hp, mp, hit, arm, dam, shop, quest, villan):
+   
+    # New player data
+    name = "npc-%s" % self.npc_index
+    self.npc_index += 1
+
+    # Create npc 
+    self.npcs[name] = Npc(name=name, gender=gender, body=body, hairstyle=hairstyle, haircolor=haircolor, armor=armor, head=head, weapon=weapon, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam, world=self, shop=shop, quest=quest,villan=villan)
+    self.npcs[name].spawn = spawn
+
+    # Add addnpc event
+    self.events.append({ 'type': 'addnpc', 'gender': gender, 'body': body, 'hairstyle': hairstyle, 'haircolor': haircolor, 'armor': armor, 'head': head, 'weapon': weapon, 'title': title, 'name': name, 'x': x, 'y': y, 'zone': zone, 'villan': villan })
+
+  def npc_die(self,name):
+    
+    self.events.append({ 'type': 'npcdie', 'name': name, 'zone': self.npcs[name].zone })
+
+  def remove_npc(self, name):
+    
+    self.events.append({ 'type': 'dropnpc', 'name': name, 'zone': self.npcs[name].zone })
+    
+    self.npcs[name].spawn.spawn_count -= 1
+    del self.npcs[name]
+
+  def set_player_target(self, player_name, x, y):
+    
+    zone = self.players[player_name].zone
+    piz = [ p for p in self.players.values() if p.zone == zone and p.name != player_name and p.online ]
+    miz = [ m for m in self.monsters.values() if m.zone == zone ]
+    niz = [ n for n in self.npcs.values() if n.zone == zone ]
+    ciz = [ c for c in self.containers.values() if c.zone == zone ]
+    tgt = None
+    objtype = None
+
+    for thing in list(piz + miz + niz + ciz):
+      if thing.x == x and thing.y == y:
+        tgt = thing
+    
+    if tgt:
+      self.players[player_name].target = tgt
+      return { 'type': 'settarget', 'name': tgt.name, 'objtype': tgt.__class__.__name__ }
+    else:
+      self.players[player_name].target = None
+      return { 'type': 'unsettarget', }
 
   def player_leave(self, player_name):
       
     # Add dropplayer event
     self.events.append({ 'type': 'dropplayer', 'name': player_name, 'zone': self.players[player_name].zone })
     self.players[player_name].online = False
+    self.players[player_name].target = None
+    self.players[player_name].mode = 'wait'
     
   def walk(self, player_name, direction):
     '''
@@ -236,207 +423,352 @@ class Game:
     if send_event:
       self.players[player_name].x = endx
       self.players[player_name].y = endy
+      self.players[player_name].mode = 'running'
+      self.players[player_name].direction = direction
       self.events.append({ 'type': 'playermove', 'name': player_name, 'zone': zone, 'direction': direction, 'start': (startx,starty), 'end': (endx,endy) })
+
+  def stopwalk(self, player_name):
+    self.players[player_name].mode = 'wait'
+
+
+  def warp(self, player, target_warp):
+    
+    # Drop player
+    self.events.append({ 'type': 'dropplayer', 'name': player.name, 'zone': player.zone })
+    
+    player.x = target_warp.end_x
+    player.y = target_warp.end_y
+    player.zone = target_warp.end_zone
+
+    
+    # Add addplayer event
+    event = { 'type': 'addplayer' }
+    event.update(player.state())
+    self.events.append(event)
+
+    # Trigger refresh for player
+    player.trigger_refresh = True
 
   def chat(self, player_name, message):
     
     zone = self.players[player_name].zone
     self.events.append({ 'type': 'playerchat', 'name': player_name, 'zone':  zone, 'message': message })
 
-  def player_attack(self, player_name, target):
+  def player_attack(self, player_name):
     
-    monster = self.monsters[target]
     player = self.players[player_name]
-    monster.target = player
-    player.target = monster
-    player.fighting = True
-    monster.fighting = True
+     
+    if player.target:
+      if self.in_attack_range(player,target):
+        player.mode = 'fighting'
+      else:
+        return { 'type': 'message', 'message': "You are not in range to attack %s" % target.title }
 
-  def player_equip(self, player_name, item_name):
+  def player_activate(self, player_name):
+
+    target = self.players[player_name].target
+    player = self.players[player_name]
+    send_now = {}
+
+    # if no target, no action
+    if target == None:
+      send_now = { 'type': 'message', 'message': "What to whom?" }
+
+    # if target is monster, then fight it
+    elif target.__class__.__name__ == 'Monster':
+      if self.in_attack_range(player, target):
+        player.mode = 'fighting'
+        send_now = { 'type': 'message', 'message': "You attack the %s" % target.title }
+      else:
+        send_now = { 'type': 'message', 'message': "You are not in range to attack %s" % target.title }
+
+    # if npc has shop or quest info, they are friendly. no attacking
+    elif target.__class__.__name__ == 'Npc':
+      if target.shop:
+        if self.shops.has_key(target.shop):
+          shop = self.shops[target.shop]
+          send_now = { 'type': 'shop', 'name': target.shop, 'title': shop.title, 'inventory': shop.get_inventory(), 'player_inventory': self.player_inventory(player_name) }
+      
+      elif target.quest:
+        if self.quests.has_key(target.quest):
+          quest = self.quests[target.quest]
+          send_now = { 'type': 'questdialog', 'name': quest.name, 'title': quest.title, 'dialog': quest.dialog }
+      
+      elif target.villan:
+        if self.in_attack_range(player, target):
+          player.mode = 'fighting'
+          send_now = { 'type': 'message', 'message': "You attack the %s" % target.title }
+        else:
+          send_now = { 'type': 'message', 'message': "You are not in range to attack %s" % target.title }
+   
+    elif target.__class__.__name__ == 'Container':
+      send_now = { 'type': 'message', 'message': "You look in %s" % target.title }
+      # TODO: Send container inventory
     
-    equip_made = False
-    if self.items.has_key(item_name):
-      if self.items[item_name].player == player_name:
-        if self.items[item_name].slot != None:
-          self.items[item_name].equipped = True
-          equip_made = True
+    # no fighting players (yet)
+    elif target.__class__.__name__ == 'Player':
+      send_now = { 'type': 'message', 'message': "Don't fight with %s!" % target.title }
 
-    if equip_made:
-      for name,item in self.items.items():
-        if name != item_name and item.player == player_name and item.slot == self.items[item_name].slot and item.equipped:
-          item.equipped = False
+    return send_now
+
+  def player_buy(self, player_name, item_name):
+
+    shop = self.players[player_name].target.shop
+    
+    if not self.shops.has_key(shop):
+      return
+
+    if len([ i for i in self.items.values() if i.player == player_name ]) >= 12:
+      return { 'type': 'message', 'message': "You can't carry any more!" }
+  
+    self.shops[shop].buy(item_name, player_name)
+
+    return { 'type': 'message', 'message': "You bought a %s" % item_name }
+
+  def player_sell(self, player_name, item_name):
+
+    shop = self.players[player_name].target.shop
+    
+    if not self.shops.has_key(shop):
+      return
+  
+    self.shops[shop].sell(item_name, player_name)
+    
+    return { 'type': 'message', 'message': "You sold a %s" % item_name }
+  
+  def player_use(self, player_name, item_name):
+    # Skip if this item doesn't exist
+    if not self.items.has_key(item_name):
+      return
+    
+    # Skip if this item isn't owned by player
+    if self.items[item_name].player != player_name:
+      return
+    
+    # Skip if this item is already equipped
+    if self.items[item_name].equipped:
+      return
+  
+    item_title = self.items[item_name].title
+    del self.items[item_name]
+    
+    return { 'type': 'message', 'message': "You use the %s." % item_title } 
+    
+
+  def player_drop(self, player_name, item_name):
+    
+    # Skip if this item doesn't exist
+    if not self.items.has_key(item_name):
+      return
+    
+    # Skip if this item isn't owned by player
+    if self.items[item_name].player != player_name:
+      return
+    
+    # Skip if this item is already equipped
+    if self.items[item_name].equipped:
+      return
+  
+    item_title = self.items[item_name].title
+    del self.items[item_name]
+    
+    return { 'type': 'message', 'message': "You drop the %s." % item_title } 
+    
+    
+  def player_equip(self, player_name, item_name):
+   
+    # Skip if this item doesn't exist
+    if not self.items.has_key(item_name):
+      return
+    
+    # Skip if this item cannot be equipped
+    if self.items[item_name].slot == 'none':
+      return
+    
+    # Skip if this item is already equipped
+    if self.items[item_name].equipped:
+      return
+   
+    # Skip if this items isn't owned by player
+    if self.items[item_name].player != player_name:
+      return
+
+    # Is there something already in that slot
+    slot = self.items[item_name].slot
+    if [ i for i in self.items.values() if i.player == player_name and i.slot == slot and i.equipped ]:
+      return
+
+    self.items[item_name].equipped = True
+    gear_type = self.items[item_name].gear_type
+    zone = self.players[player_name].zone
+    
+    if slot == 'armor':
+      self.events.append({ 'type': 'setplayerarmor', 'name': player_name, 'zone':  zone, 'armor': gear_type,})
+    elif slot == 'weapon':
+      self.events.append({ 'type': 'setplayerweapon', 'name': player_name, 'zone':  zone, 'weapon': gear_type,})
+    elif slot == 'head':
+      self.events.append({ 'type': 'setplayerhead', 'name': player_name, 'zone':  zone, 'head': gear_type,})
+
+    self.players[player_name].triger_statsupdate = True    
     
   def player_unequip(self, player_name, item_name):
 
-    if self.items.has_key(item_name):
-      if self.items[item_name].player == player_name and self.items[item_name].equipped:
-        self.items[item_name].equipped = False
+    # Skip if this item doesn't exist
+    if not self.items.has_key(item_name):
+      return
+    
+    # Skip if this item cannot be equipped
+    if self.items[item_name].slot == 'none':
+      return
+    
+    # Skip if this item is unequipped
+    if not self.items[item_name].equipped:
+      return
+
+    # Skip if this items isn't owned by player
+    if self.items[item_name].player != player_name:
+      return
+
+    self.items[item_name].equipped = False
+    
+    slot = self.items[item_name].slot
+    zone = self.players[player_name].zone
+
+    if slot == 'armor':
+      self.events.append({ 'type': 'setplayerarmor', 'name': player_name, 'zone':  zone, 'armor': 'clothes',})
+    elif slot == 'weapon':
+      self.events.append({ 'type': 'setplayerweapon', 'name': player_name, 'zone':  zone, 'weapon': 'unarmed',})
+    elif slot == 'head':
+      self.events.append({ 'type': 'setplayerhead', 'name': player_name, 'zone':  zone, 'head': 'none',})
+    
+    self.players[player_name].triger_statsupdate = True    
 
   def player_inventory(self, player_name):
     
     # Return hash of player's items
-    return { 'type': 'inventory', 'inventory': { k: v for k, in v in items.items() if v.player == player } }
+    inv = {}
+    for k,v in self.items.items():
+      if v.player == player_name:
+        inv[k] = v.state()
+
+    return { 'type': 'inventory', 'inventory': inv }
 
   def player_disengage(self, player_name):
     
     # Player disengages and stops fighting
     self.players[player_name].fighting = False
 
-  def player_cast(self, player_name, spell):
-   
+  def player_cast(self, player_name, spell, target):
+    
     # Can't cast if fighting 
-    if self.players[player_name].fighting:
+    if not self.players[player_name].free():
       return
-
+    
     if spell in self.players[player_name].spells:
-      print player_name,"casts",spell_name
+      zone = self.players[player_name].zone
+      caster_anim = self.spells[spell].caster_source
+      target_anim = self.spells[spell].target_source
       self.events.append({ 'type': 'playercast', 'name': player_name, 'zone':  zone, 'caster_anim': caster_anim, 'target': target, 'target_anim': target_anim })
       
   def get_player_dam(self, player_name):
-
-    # base damage
+    '''
+    Get total damage of player
+    '''
     base_damage = self.players[player_name].dam
-    weapon_damage = 0
+    gear_damage = 0
+    
+    for item_name,item in self.items.items():
+      if item.equipped and item.player == player_name:
+        gear_damage += item.dam
+    
+    return base_damage + gear_damage
+
+  
+  def get_player_hit(self, player_name):
+    '''
+    Get hit bonus for player
+    '''
+    base_hit = self.players[player_name].hit
+    gear_hit = 0
+    
+    for item_name,item in self.items.items():
+      if item.equipped and item.player == player_name:
+        gear_hit =+ item.hit
+    
+    return base_hit + gear_hit
+
+
+  def get_player_arm(self, player_name):
+    '''
+    Get armor class of player
+    '''
+    base_arm = self.players[player_name].arm
+    gear_arm = 0
+    
+    for item_name,item in self.items.items():
+      if item.equipped and item.player == player_name:
+        gear_arm = item.arm
+    
+    return base_arm + gear_arm
+
+
+  def get_player_attack_type(self, player_name):
+    
+    attack_type = 'slash'
     
     for item_name,item in self.items.items():
       if item.equipped and item.slot == 'weapon' and item.player == player_name:
-        print item.player,'has',item_name,item.stats['dam']
-        weapon_damage = item.stats['dam']
+        if item.gear_type in [ 'sword', 'wand' ]:
+          attack_type = 'slash'
+        elif item.gear_type == 'bow':
+          attack_type = 'bow'
+        elif item.gear_type == 'spear':
+          attack_type = 'thrust'
+    return attack_type
+
+  def get_distance_between(self, obj1, obj2):
     
-    return base_damage + weapon_damage
+    return abs(obj1.x - obj2.x) + abs(obj1.y - obj2.y)
+
+  def in_attack_range(self, attacker, target):
+    
+    distance = self.get_distance_between(attacker,target)
+
+    if attacker.__class__.__name__ == 'Player':
+      attack_type = self.get_player_attack_type(attacker.name)
+      if attack_type == 'slash':
+        if distance < 2:
+          return True
+      elif attack_type == 'bow':
+        if distance < 10:
+          return True   
+      elif attack_type == 'thrust':
+        if distance < 5:
+          return True
+
+    elif attacker.__class__.__name__ == 'Npc':
+      attack_type = attacker.attack_type
+      if attack_type == 'slash':
+        if distance < 2:
+          return True
+      elif attack_type == 'bow':
+        if distance < 10:
+          return True   
+      elif attack_type == 'thrust':
+        if distance < 5:
+          return True
+      
+    elif attacker.__class__.__name__ == 'Monster':
+      # TODO: Give monsters an attack range
+      if distance < 2:
+        return True
+
+    return False
+
 
   def loop(self):
     
-    # Update game world
-    for ms in self.spawns:
-      ms.spawn(self)
-
-    for name,monster in self.monsters.items():
-      # Make monsters wander
-      if monster.free():
-        if monster.target == None:
-          direction = 'south'
-          x = random.randint(-1,1)
-          y = 0
-          if x > 0:
-            direction = 'east'
-          elif x < 0:
-            direction = 'west'
-          elif x == 0:
-            y = random.randint(-1,1)
-            if y > 0:
-              direction = 'north'
-            if y < 0:
-              direction = 'south'
-          
-          if x == 0 and y == 0:
-            continue
-
-          if not self.zones[monster.zone].open_at(monster.x + x, monster.y + y):
-            continue
-          
-          # Don't wanter more than 10 spaces
-          #if abs(monster.x - x) > 10:
-          #  continue
-
-          #if abs(monster.y - y) > 10:
-          #  continue
-
-          monster.reset()
-          self.events.append({'type': 'monstermove', 'name': name, 'zone': monster.zone, 'direction': direction, 'start': (monster.x,monster.y), 'end': (monster.x + x, monster.y + y)})
-          monster.x += x
-          monster.y += y
-    
-    # Update battles
-    for name, player in self.players.items():
-      if player.free() and player.target and player.fighting:
-        player.reset()
-        player_dam = self.get_player_dam(name)
-
-        monster_arm = player.target.arm
-
-        # RULES
-        # hit succeeds if d20 + player_tohit > monster_arm
-        # d20 roll of 1 always failure
-        # d20 roll of 20 always hit
-        # damage = d<player damage>
-        hitroll = random.randint(0,20) + player.hit
-        hit_succeeds = False
-        if hitroll == 1:
-          pass # miss
-        elif hitroll >= 20:
-          # hit
-          hit_succeeds = True
-        elif hitroll > monster_arm:
-          # hit
-          hit_succeeds = True
-        
-        hit_damage = random.randint(0,player_dam)
-        if hit_succeeds:
-          player.target.hp[0] -= hit_damage
-          self.events.append({ 'type': 'playerslash', 'name': name, 'zone': player.zone, 'dam': hit_damage, 'target': player.target.title })
-
-        print "Player hit = %s, monster arm = %s, Hitroll = %s. Player dam = %s, dam roll = %s." % ( player.hit, monster.arm, hitroll, player_dam, hit_damage )
-        
-      # Are we dead?
-      if player.hp[0] <= 0:
-        self.events.append({ 'type': 'playerdie', 'name': name, 'zone': player.zone })
-     
-        # Free player after 5 seconds
-        player.free_at = time.time() + 5
-        
-        # TODO:
-        # - respawn player
-        
-      # if target gone, reset to none
-      if player.target:
-        if player.target.name not in self.monsters.keys():
-          player.target = None
-             
-    for name, monster in self.monsters.items():
-      if monster.free() and monster.target and monster.fighting:
-        monster.reset()
-        monster_tohit = monster.hit
-        monster_dam = monster.dam
-        player_arm = monster.target.arm
-        
-        hitroll = random.randint(0,20) + monster_tohit
-        hit_succeeds = False
-        if hitroll == 1:
-          pass # miss
-        elif hitroll == 20:
-          # hit
-          hit_succeeds = True
-        elif hitroll > player_arm:
-          # hit
-          hit_succeeds = True
-
-        hit_damage = 0
-        if hit_succeeds:
-          hit_damage = random.randint(0,monster_dam)
-          monster.target.hp[0] -= hit_damage
-        
-        self.events.append({ 'type': 'monsterattack', 'title': monster.title, 'name': name, 'zone': monster.zone, 'dam': hit_damage, 'target': monster.target.title })
-        
-      # Are we dead?
-      if monster.hp[0] <= 0:
-        self.events.append({ 'type': 'monsterdie', 'title': monster.title, 'name': name, 'zone': monster.zone })
-        monster.spawn.spawn_count -= 1
-
-        for n,p in self.players.items():
-          if p.target == monster:
-            p.target = None
-            if p.fighting:
-              p.fighting = False
-              self.events.append({'type': 'playerstop', 'name': n, 'zone': p.zone})
-
-        del self.monsters[name]
-        
-        # TODO:
-        # - monster drops stuff
-        # - player gains xp
-       
-       
+    # update game world
     # Keepalive tick
     #if time.time() - 60 > self.tick:
     #  self.events.append({ 'type': 'tick', 'time': time.time(), 'zone': 'all' })
@@ -444,117 +776,7 @@ class Game:
     
     # Follow event queue
     for e in self.events[self.last_event:]:
-      print "Event:", e
+      print "%s %s: %s" % (e['type'].upper(), e['zone'].upper(), e)
 
     self.last_event = len(self.events)
-
-  def load_from_ini_zones(self):
-
-    zone_config = ConfigParser.RawConfigParser()
-    zone_config.read('data/zones.ini')
-    
-    for zone in zone_config.sections():
-      
-      values = {}
-      values['name'] = zone
-      values['source'] = zone_config.get(zone,'source')
-      values['title']  = zone_config.get(zone,'title')
-
-      self.zones[zone] = Zone(**values)
-
-  def load_from_ini_players(self):
-    
-    player_config = ConfigParser.RawConfigParser()
-    player_config.read('data/players.ini')
-
-    for player in player_config.sections():
-      
-      values             = {}
-      values['source']   = player_config.get(player,'source')
-      values['zone']     = player_config.get(player,'zone')
-      values['title']    = player_config.get(player,'title')
-      values['x']        = player_config.getint(player,'x')
-      values['y']        = player_config.getint(player,'y')
-      values['password'] = player_config.get(player,'password')
-      values['spells']   = player_config.get(player,'spells').split(',')
-      values['hp']       = player_config.getint(player,'hp')
-      values['mp']       = player_config.getint(player,'mp')
-      values['hit']      = player_config.getint(player,'hit')
-      values['dam']      = player_config.getint(player,'dam')
-      values['arm']      = player_config.getint(player,'arm')
-      values['name']     = player
-
-      self.players[player] = Player(**values)
-
-  def load_from_ini_spawns(self):
-    
-    spawn_config = ConfigParser.RawConfigParser()
-    spawn_config.read('data/spawns.ini')
-
-    for spawn in spawn_config.sections():
-      
-      values              = {}
-      values['source']    = spawn_config.get(spawn,'source')
-      values['zone']      = spawn_config.get(spawn,'zone')
-      values['title']     = spawn_config.get(spawn,'title')
-      values['x']         = spawn_config.getint(spawn,'x')
-      values['y']         = spawn_config.getint(spawn,'y')
-      values['hp']        = spawn_config.getint(spawn,'hp')
-      values['mp']        = spawn_config.getint(spawn,'mp')
-      values['hit']       = spawn_config.getint(spawn,'hit')
-      values['dam']       = spawn_config.getint(spawn,'dam')
-      values['arm']       = spawn_config.getint(spawn,'arm')
-      values['spawn_max'] = spawn_config.getint(spawn,'spawn_max')
-      values['monster']   = Monster
-       
-      self.spawns.append(Spawn(**values))
-  
-  def load_from_ini_items(self):
-    
-    item_config = ConfigParser.RawConfigParser()
-    item_config.read('data/items.ini')
-
-    for item in item_config.sections():
-      
-      values              = {}
-      values['source']    = item_config.get(item,'source')
-      values['player']    = item_config.get(item,'player')
-      values['container'] = item_config.get(item,'container')
-      values['title']     = item_config.get(item,'title')
-      values['hit']       = item_config.getint(item,'hit')
-      values['dam']       = item_config.getint(item,'dam')
-      values['arm']       = item_config.getint(item,'arm')
-      values['slot']      = item_config.get(item,'slot')
-      values['name']      = item
-
-      self.items[item] = Item(**values)
-
-  def load_from_ini_spells(self):
-
-    spell_config = ConfigParser.RawConfigParser()
-    spell_config.read('data/spells.ini')
-
-    for spell in spell_config.sections():
-      
-      values          = {}
-      values['name']  = spell
-      values['title'] = spell_config.get(spell,'title')
-      
-      self.spells[spell] = Spell(**values)
-
-  def load_from_ini_containers(self):
-    
-    container_config = ConfigParser.RawConfigParser()
-    container_config.read('data/containers.ini')
-
-    for container in container_config.sections():
-      
-      values          = {}
-      values['name']  = container
-      values['title'] = container_config.get(container,'title')
-      values['zone'] = container_config.get(container,'zone')
-      values['x'] = container_config.getint(container,'x')
-      values['y'] = container_config.getint(container,'y')
-      
-      self.containers[container] = Container(**values)
 
