@@ -6,7 +6,10 @@ TODO:
 * Spells to summon monsters/companions that protect caster
 * Player trades
 * Player Groups
-** Awarding exp
-** Dividing treasure
+* Awarding exp
+* Dividing treasure
 * Crafting
 * Define monster, NPC, player spawn points on zone map. Define warps on zone map. 
+* content
+* more content
+* even more content
