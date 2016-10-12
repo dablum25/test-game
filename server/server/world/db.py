@@ -140,7 +140,8 @@ class Db:
                      'hit': item[7],
                      'arm': item[8],
                      'equipped': bool(item[9]),
-                     'icon': item[10],})
+                     'icon': item[10],
+                     'value': item[11],})
 
     return items
 

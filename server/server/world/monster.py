@@ -52,13 +52,9 @@ class Monster:
       # heal 10% per second while waiting
       if self.hp[0] < self.hp[1]:
         self.hp[0] += self.hp[1]/10
-      if self.mp[0] < self.mp[1]:
-        self.mp[0] += self.mp[1]/10
       # but dont go over!
       if self.hp[0] > self.hp[1]:
         self.hp[0] = self.hp[1]
-      if self.mp[0] > self.mp[1]:
-        self.mp[0] = self.mp[1]
 
     elif self.mode == 'wander':
       

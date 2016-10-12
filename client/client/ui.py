@@ -201,8 +201,8 @@ class ShopManager(Manager):
       dam   = value['dam']
       hit   = value['hit']
       arm   = value['arm']
-      cost  = value['cost']
-      invitems.append(Frame(ShopItem(name, title, icon, self.client, dam, hit, arm, cost), is_expandable=True))
+      gold  = value['value']
+      invitems.append(Frame(ShopItem(name, title, icon, self.client, dam, hit, arm, gold), is_expandable=True))
     
     self.shop_inventory_list = Scrollable(height=256, width=512, is_fixed_size=True, content=VerticalContainer(invitems, align=HALIGN_LEFT))
 
@@ -228,20 +228,20 @@ class ShopManager(Manager):
 
 class ShopItem(HorizontalContainer):
 
-  def __init__(self, name, title, icon, client, dam, hit, arm, cost, desc=""):
+  def __init__(self, name, title, icon, client, dam, hit, arm, gold, desc=""):
    
     self.client = client
     self.name   = name
     self.title  = title
     icon        = Graphic(path=['icons', icon])
     title       = Label(self.title)
-    cost        = Label("%sg" % cost, color=[230,244,68,255])
+    gold        = Label("%sg" % gold, color=[230,244,68,255])
     stats       = HorizontalContainer([Label(str(dam), color=[255,100,100,255]),
                                      Label(str(hit), color=[100,100,255,255]),
                                      Label(str(arm), color=[100,255,100,255]),])
 
     buy_button = OneTimeButton(label='Buy', on_release=self.confirm) 
-    HorizontalContainer.__init__(self, [icon,title,cost,stats,buy_button], align=HALIGN_LEFT)
+    HorizontalContainer.__init__(self, [icon,title,gold,stats,buy_button], align=HALIGN_LEFT)
 
   def confirm(self, toggle):
     self.client.popupManager = PopupConfirm(text="Buy a %s?" % self.title, window=self.client.window, theme=UI_THEME, on_ok=self.buy)
@@ -256,20 +256,20 @@ class ShopItem(HorizontalContainer):
 
 class PlayerShopItem(HorizontalContainer):
 
-  def __init__(self, name, title, icon, client, dam, hit, arm, cost=0, desc=""):
+  def __init__(self, name, title, icon, client, dam, hit, arm, gold=0, desc=""):
    
     self.client = client
     self.name   = name
     self.title  = title
     icon        = Graphic(path=['icons', icon])
     title       = Label(self.title)
-    cost        = Label("%sg" % cost, color=[230,244,68,255])
+    gold        = Label("%sg" % gold, color=[230,244,68,255])
     stats       = HorizontalContainer([Label(str(dam), color=[255,100,100,255]),
                                      Label(str(hit), color=[100,100,255,255]),
                                      Label(str(arm), color=[100,255,100,255]),])
 
     sell_button = OneTimeButton(label='Sell', on_release=self.confirm) 
-    HorizontalContainer.__init__(self, [icon,title,cost,stats,sell_button], align=HALIGN_LEFT)
+    HorizontalContainer.__init__(self, [icon,title,gold,stats,sell_button], align=HALIGN_LEFT)
 
   def confirm(self, toggle):
     self.client.popupManager = PopupConfirm(text="Sell your %s?" % self.title, window=self.client.window, theme=UI_THEME, on_ok=self.sell)

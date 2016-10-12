@@ -1,6 +1,6 @@
 class Item:
 
-  def __init__(self, name, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon):
+  def __init__(self, name, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon, value):
 
     self.title = title
     self.name = name
@@ -13,8 +13,9 @@ class Item:
     self.dam = dam
     self.arm = arm
     self.icon = icon
+    self.value = value
 
   def state(self):
     
-    return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm }
+    return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm, 'value': self.value }
 

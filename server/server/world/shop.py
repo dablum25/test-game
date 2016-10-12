@@ -7,7 +7,7 @@ class ShopItem:
   '''
   mi_index = 0
 
-  def __init__(self, title, gear_type, slot, hit, dam, arm, cost, icon):
+  def __init__(self, title, gear_type, slot, hit, dam, arm, value, icon):
 
     self.title = title
     self.gear_type = gear_type
@@ -15,7 +15,7 @@ class ShopItem:
     self.hit = hit
     self.dam = dam
     self.arm = arm
-    self.cost = cost
+    self.value = value 
     self.icon = icon
 
   def create(self, buyer_name, world):
@@ -82,7 +82,7 @@ class Shop:
 
     inv = {}
     for name,item in self.inventory.items():
-      inv[name] = { 'title': item.title, 'slot': item.slot, 'hit': item.hit, 'dam': item.dam, 'arm': item.arm, 'cost': item.cost, 'icon': item.icon }
+      inv[name] = { 'title': item.title, 'slot': item.slot, 'hit': item.hit, 'dam': item.dam, 'arm': item.arm, 'value': item.value, 'icon': item.icon }
 
     return inv
 
