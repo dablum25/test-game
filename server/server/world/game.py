@@ -10,7 +10,7 @@ from monsterspawn import MonsterSpawn
 from npcspawn import NpcSpawn
 from player import Player
 from monster import Monster
-from zone import Zone,ZoneWithObjects
+from zone import Zone
 from spell import Spell
 from container import Container
 from item import Item
@@ -57,13 +57,13 @@ class Game:
     # Zones table
     self.zones = {}
     for zone in self.db.load_zones():
-      self.zones[zone['name']] = Zone(**zone)
+      self.zones[zone['name']] = Zone(world=self,**zone)
       #self.zones[zone['name']] = ZoneWithObjects(world=self,**zone)
     
     # Monster Spawn list
     self.monster_spawns = []
-    for spawn in self.db.load_monster_spawns():
-      self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
+    #for spawn in self.db.load_monster_spawns():
+    #  self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
 
     # Items table
     self.items = {}
@@ -92,8 +92,8 @@ class Game:
 
     # NPC Spawn list
     self.npc_spawns = []
-    for spawn in self.db.load_npc_spawns():
-      self.npc_spawns.append(NpcSpawn(world=self,**spawn))
+    #for spawn in self.db.load_npc_spawns():
+    #  self.npc_spawns.append(NpcSpawn(world=self,**spawn))
     
 
   def process_data(self, player_name, data, protocol=None):
@@ -319,7 +319,7 @@ class Game:
   def add_monster(self, spawn, source, title, x, y, zone, hp, mp, hit, arm, dam):
    
     # New player data
-    name = "monster-%s" % self.monster_index
+    name = "%s-%s" % (spawn.name, self.monster_index)
     self.monster_index += 1
 
     # Create monster 

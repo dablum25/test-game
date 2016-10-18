@@ -4,7 +4,7 @@ from twisted.internet import task, reactor
 
 class Npc:
 
-  def __init__(self, name, title, gender, body, hairstyle, haircolor, armor, head, weapon, x, y, zone, hp, mp, hit, dam, arm, shop, quest, villan, world):
+  def __init__(self, name, title, gender, body, hairstyle, haircolor, armor, head, weapon, x, y, zone, hp, mp, hit, dam, arm, shop, quest, villan, world, spawn=None):
 
     self.title = title
     self.name = name
@@ -37,6 +37,7 @@ class Npc:
     elif self.weapon in [ 'bow' ]:
       self.attack_type = 'shoot'
 
+    self.spawn = spawn
 
     # Merchant shop
     self.shop = shop

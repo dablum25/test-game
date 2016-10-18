@@ -1,6 +1,7 @@
 import random
 import time
 import copy
+from npc import Npc
 from twisted.internet import task
 
 class NpcSpawn:
@@ -71,7 +72,7 @@ class NpcSpawnFromZone:
 
   npc_index = 0
 
-  def __init__(self, name, x, y, zone, spawn_max, world):
+  def __init__(self, name, x, y, zone, spawn_max, spawn_delay, world):
 
     # Load monster from data/monsters.ini
     config = ConfigParser.RawConfigParser()
@@ -82,13 +83,13 @@ class NpcSpawnFromZone:
     self.x = x
     self.y = y
     self.zone = zone
-    self.spawn_delay = 5
+    self.spawn_delay = spawn_delay
     self.spawn_max = spawn_max
     self.spawn_count = 0
     self.world = world
     hp = config.getint(name, 'hp')
     self.hp = [ hp, hp ]
-    hp = config.getint(name, 'mp')
+    mp = config.getint(name, 'mp')
     self.mp = [ mp, mp ]
     self.hit = config.getint(name, 'hit')
     self.arm = config.getint(name, 'arm')
@@ -137,7 +138,7 @@ class NpcSpawnFromZone:
       name = "%s-%s" % (self.name, self.npc_index)
       self.npc_index += 1
 
-      self.world.npcs[name] = Npc(spawn=self, world=self.world, **copy.deepcopy(self.build_hash))
+      self.world.npcs[name] = Npc(name=name, spawn=self, world=self.world, **copy.deepcopy(self.build_hash))
       self.spawn_count += 1
 
       self.world.events.append({ 'type': 'addnpc', 'gender': self.gender, 'body': self.body, 'hairstyle': self.hairstyle, 'haircolor': self.haircolor, 'armor': self.armor, 'head': self.head, 'weapon': self.weapon, 'title': self.title, 'name': name, 'x': self.x, 'y': self.y, 'zone': self.zone, 'villan': self.villan })

@@ -4,7 +4,7 @@ from twisted.internet import task, reactor
 
 class Monster:
 
-  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm, world):
+  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm, world, spawn=None):
     
     self.source = source
     self.title = title
@@ -12,7 +12,7 @@ class Monster:
     self.x = x
     self.y = y
     self.zone = zone
-    self.spawn = None
+    self.spawn = spawn
     
     self.hp = hp
     self.mp = mp

@@ -1,6 +1,8 @@
 import random
 import time
 import copy
+import ConfigParser
+from monster import Monster
 from twisted.internet import task
 
 class MonsterSpawn:
@@ -46,7 +48,7 @@ class MonsterSpawn:
 
 import ConfigParser
 
-class MonsterSpawnFromMap:
+class MonsterSpawnFromZone:
 
   monster_index = 0
   
@@ -72,8 +74,7 @@ class MonsterSpawnFromMap:
     self.world = world
     hp = self.config.getint(name, 'hp')
     self.hp = [ hp, hp ]
-    mp = self.config.getint(name, 'mp')
-    self.mp = [ mp, mp ]
+    self.mp = [ 0, 0 ]
     self.level = self.config.getint(name, 'level')
     self.hit   = self.config.getint(name, 'hit')
     self.arm   = self.config.getint(name, 'arm')
@@ -84,7 +85,7 @@ class MonsterSpawnFromMap:
                         'title': self.title,
                         'zone': self.zone,
                         'hp': self.hp,
-                        'mp': self.dam,
+                        'mp': self.mp,
                         'hit': self.hit,
                         'dam': self.dam,
                         'arm': self.arm, }
@@ -100,11 +101,11 @@ class MonsterSpawnFromMap:
       self.monster_index += 1
 
       # Generate build hash and set a random spawn location within hash
-      build = copy.deepcopy(self.build_has)
+      build = copy.deepcopy(self.build_hash)
       build['x'] = random.randint(self.x, self.x+self.w)
       build['y'] = random.randint(self.y, self.y+self.h)
 
-      self.world.monsters[name] = Monster(spawn=self, world=self.world, **build)
+      self.world.monsters[name] = Monster(name=name, world=self.world, spawn=self, **build)
       self.spawn_count += 1
       
       self.world.events.append({ 'type': 'addmonster', 
