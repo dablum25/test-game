@@ -6,15 +6,11 @@ import math
 from twisted.internet import reactor
 
 from db import Db
-from monsterspawn import MonsterSpawn
-from npcspawn import NpcSpawn
 from player import Player,load_players
-from monster import Monster
-from zone import Zone
+from zone import Zone,load_zones
 from spell import Spell
 from container import Container
 from item import Item
-from npc import Npc
 from warp import Warp
 from shop import Shop,load_shops
 from quest import Quest
@@ -43,14 +39,14 @@ class Game:
     # Players table
     self.players = {}
     load_players(self, 4,14,'start')
-    #for player in self.db.load_players():
-    #  self.players[player['name']] = Player(world=self,**player)
 
     # Monsters table
+    self.monster_spawns = []
     self.monsters = {}
     self.monster_index = 0 # for randomly spawned monsters
     
     # Npcs table
+    self.npc_spawns = []
     self.npcs = {}
     self.npc_index = 0
     
@@ -61,23 +57,13 @@ class Game:
     # For generated items
     self.item_index = 0
     
-    # Monster Spawn list
-    self.monster_spawns = []
-    #for spawn in self.db.load_monster_spawns():
-    #  self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
-    
     # Zones table
     self.zones = {}
-    for zone in self.db.load_zones():
-      self.zones[zone['name']] = Zone(world=self,**zone)
-      #self.zones[zone['name']] = ZoneWithObjects(world=self,**zone)
-    
+    load_zones(self)
 
     # Shops table
     self.shops = {}
     load_shops(self)
-    #for shop in self.db.load_shops():
-    #  self.shops[shop['name']] = Shop(world=self,**shop)
 
     # Quests table
     self.quests = {}
@@ -94,10 +80,6 @@ class Game:
     for warp in self.db.load_warps():
       self.warps.append(Warp(**warp))
 
-    # NPC Spawn list
-    self.npc_spawns = []
-    #for spawn in self.db.load_npc_spawns():
-    #  self.npc_spawns.append(NpcSpawn(world=self,**spawn))
     
 
   def process_data(self, player_name, data, protocol=None):
@@ -170,30 +152,6 @@ class Game:
   
     return { "type": "playerstats", "stats": stats }
 
-  def add_monster_spawn(self, data):
-    pass
-
-  def add_npc_spawn(self, data):
-    pass
-
-  def add_zone(self, data):
-    pass
-
-  def add_shop(self, data):
-    pass
-
-  def add_item(self, data):
-    pass
-
-  def add_warp(self, data):
-    pass
-
-  def add_spell(self, data):
-    pass
-
-  def add_quest(self, data):
-    pass
-
   def player_goto(self, player_name, x, y):
     player = self.players[player_name]
     zone = self.zones[player.zone]
@@ -261,18 +219,11 @@ class Game:
     x = monster.x
     y = monster.y
     zone = monster.zone
-    source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corps?
+    source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corpse?
 
     self.containers[name] = Container(title, name, x, y, zone, source, 32, 32, 0, 0)
-
-    # Generate dropped items
-    iname = "item-%s" % self.item_index
-    self.items[iname] = Item(iname, "Monster parts", None, None, None, name, 0, 0, 0, False, 'data/icons/monsterparts.png')
-    self.item_index += 1
-
-    iname = "item-%s" % self.item_index
-    self.items[iname] = Item(iname, "Hat", 'hat', 'head', None, name, 0, 0, 0, False, 'data/icons/hat.png')
-    self.item_index += 1
+    
+    # TODO: generate loot for this container from loot.ini
     
     self.events.append({'type': 'addcontainer', 'name': name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
     
@@ -319,19 +270,6 @@ class Game:
     self.events.append(event)
     
     player.trigger_refresh = True
-  
-  def add_monster(self, spawn, source, title, x, y, zone, hp, mp, hit, arm, dam):
-   
-    # New player data
-    name = "%s-%s" % (spawn.name, self.monster_index)
-    self.monster_index += 1
-
-    # Create monster 
-    self.monsters[name] = Monster(name=name, source=source, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam, world=self)
-    self.monsters[name].spawn = spawn
-
-    # Add addmonster event
-    self.events.append({ 'type': 'addmonster', 'source': source, 'title': title, 'name': name, 'x': x, 'y': y, 'zone': zone })
 
   def monster_die(self, name):
 
@@ -343,19 +281,6 @@ class Game:
     
     self.monsters[name].spawn.spawn_count -= 1
     del self.monsters[name]
-
-  def add_npc(self, spawn, gender, body, hairstyle, haircolor, armor, head, weapon, title, x, y, zone, hp, mp, hit, arm, dam, shop, quest, villan):
-   
-    # New player data
-    name = "npc-%s" % self.npc_index
-    self.npc_index += 1
-
-    # Create npc 
-    self.npcs[name] = Npc(name=name, gender=gender, body=body, hairstyle=hairstyle, haircolor=haircolor, armor=armor, head=head, weapon=weapon, title=title, x=x, y=y, zone=zone, hp=hp, mp=mp, hit=hit, arm=arm, dam=dam, world=self, shop=shop, quest=quest,villan=villan)
-    self.npcs[name].spawn = spawn
-
-    # Add addnpc event
-    self.events.append({ 'type': 'addnpc', 'gender': gender, 'body': body, 'hairstyle': hairstyle, 'haircolor': haircolor, 'armor': armor, 'head': head, 'weapon': weapon, 'title': title, 'name': name, 'x': x, 'y': y, 'zone': zone, 'villan': villan })
 
   def npc_die(self,name):
     

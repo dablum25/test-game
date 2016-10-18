@@ -3,72 +3,9 @@ import time
 import copy
 from npc import Npc
 from twisted.internet import task
-
-class NpcSpawn:
-
-  def __init__(self, name, gender, body, hairstyle, haircolor, armor, head, weapon, title, x, y, zone, spawn_max, hp, mp, hit, dam, arm, shop, quest, villan, world):
-
-    self.name = name
-    self.title = title
-    self.x = x
-    self.y = y
-    self.zone = zone
-    self.spawn_delay = 5
-    self.spawn_max = spawn_max 
-    self.spawn_count = 0
-    self.world = world
-    self.hp = [ hp, hp ]
-    self.mp = [ mp, mp ]
-    self.hit = hit
-    self.arm = arm
-    self.dam = dam
-    
-    self.gender = gender
-    self.body = body
-    self.hairstyle = hairstyle
-    self.haircolor = haircolor
-    self.armor = armor
-    self.head = head
-    self.weapon = weapon
-
-    self.shop = shop
-    self.quest = quest
-    self.villan = villan
-    
-    # spawn, title, x, y, zone, hp, mp, hit, arm, dam
-    self.build_hash = { 'gender': self.gender,
-                        'body': self.body, 
-                        'hairstyle': self.hairstyle,
-                        'haircolor': self.haircolor,
-                        'armor': self.armor,
-                        'head': self.head,
-                        'weapon': self.weapon,
-                        'title': self.title,
-                        'x': self.x,
-                        'y': self.y,
-                        'zone': self.zone,
-                        'hp': self.hp,
-                        'mp': self.dam,
-                        'hit': self.hit,
-                        'dam': self.dam,
-                        'arm': self.arm,
-                        'shop': self.shop,
-                        'quest': self.quest,
-                        'villan': self.villan, }
-
-    # Schedule update task
-    self.spawn_task = task.LoopingCall(self.spawn)
-    self.spawn_task.start(self.spawn_delay)
-    
-  def spawn(self):
-
-    if self.spawn_count < self.spawn_max:
-      self.world.add_npc(spawn=self, **copy.deepcopy(self.build_hash) )
-      self.spawn_count += 1
-
 import ConfigParser
 
-class NpcSpawnFromZone:
+class NpcSpawn:
 
   npc_index = 0
 
@@ -106,6 +43,7 @@ class NpcSpawnFromZone:
     self.shop = config.get(name, 'shop')
     self.quest = config.get(name, 'quest')
     self.villan = config.getboolean(name, 'villan')
+    self.mode = config.get(name, 'mode')
     
     # spawn, title, x, y, zone, hp, mp, hit, arm, dam
     self.build_hash = { 'gender': self.gender,
@@ -126,11 +64,12 @@ class NpcSpawnFromZone:
                         'arm': self.arm,
                         'shop': self.shop,
                         'quest': self.quest,
-                        'villan': self.villan, }
+                        'villan': self.villan,
+                        'mode': self.mode, }
 
     # Schedule update task
     self.spawn_task = task.LoopingCall(self.spawn)
-    self.spawn_task.start(self.spawn_delay)
+    self.spawn_task.start(self.spawn_delay, now=False)
     
   def spawn(self):
 

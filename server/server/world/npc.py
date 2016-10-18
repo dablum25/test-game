@@ -4,7 +4,7 @@ from twisted.internet import task, reactor
 
 class Npc:
 
-  def __init__(self, name, title, gender, body, hairstyle, haircolor, armor, head, weapon, x, y, zone, hp, mp, hit, dam, arm, shop, quest, villan, world, spawn=None):
+  def __init__(self, name, title, gender, body, hairstyle, haircolor, armor, head, weapon, x, y, zone, hp, mp, hit, dam, arm, shop, quest, villan, mode, world, spawn=None):
 
     self.title = title
     self.name = name
@@ -20,6 +20,7 @@ class Npc:
     self.hit = hit
     self.dam = dam
     self.arm = arm
+    self.mode = mode
     self.world = world
     self.gender = gender
     self.body = body
@@ -45,17 +46,15 @@ class Npc:
     # Quest info
     self.quest = quest
 
-    if self.shop or self.quest:
-      self.mode = 'wait'
-    else:
-      self.mode = 'wander'
-
 
     # bad guy
     self.villan = villan
 
     self.update_task = task.LoopingCall(self.update)
     self.update_task.start(1.0)
+   
+    
+    print "Loaded NPC",self.state()
     
   def state(self):
     
@@ -77,7 +76,6 @@ class Npc:
 
     if not self.target:
       self.target = attacker
-    print self.hp[0], damage
     self.mode = 'fighting'
     self.hp[0] -= damage
 

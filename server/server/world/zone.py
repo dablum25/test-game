@@ -1,8 +1,25 @@
 import pytmx
 import time
 from astar import *
-from monsterspawn import MonsterSpawnFromZone
-from npcspawn import NpcSpawnFromZone
+from monsterspawn import MonsterSpawn
+from npcspawn import NpcSpawn
+import ConfigParser
+
+def load_zones(world):
+
+  config = ConfigParser.RawConfigParser()
+  config.read('data/zones.ini')
+  
+  
+  for name in config.sections():
+    title = config.get(name,'title')
+    source = config.get(name,'source')
+    north = config.get(name,'north')
+    south = config.get(name,'south')
+    east =  config.get(name,'east')
+    west = config.get(name,'west')
+
+    world.zones[name] = Zone(name, source, title, world)
 
 class Zone:
   '''
@@ -39,7 +56,7 @@ class Zone:
         monster_name = o.properties['monster_name']
 
         # Create monster spawn
-        MonsterSpawnFromZone(monster_name, x, y, w, h, self.name, max_spawn, spawn_delay, self.world)
+        MonsterSpawn(monster_name, x, y, w, h, self.name, max_spawn, spawn_delay, self.world)
       
       if o.type == 'npc_spawn':
         x = int(o.x/32)
@@ -50,8 +67,8 @@ class Zone:
         spawn_delay = float(o.properties['spawn_delay'])
         npc_name = o.properties['npc_name']
 
-        # Create monster spawn
-        NpcSpawnFromZone(npc_name, x, y, self.name, max_spawn, spawn_delay, self.world)
+        # Create npc spawn
+        NpcSpawn(npc_name, x, y, self.name, max_spawn, spawn_delay, self.world)
      
     print "Loaded ZONE",self.name
      
