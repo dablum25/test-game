@@ -45,7 +45,7 @@ class Npc:
     # Quest info
     self.quest = quest
 
-    if self.shop:
+    if self.shop or self.quest:
       self.mode = 'wait'
     else:
       self.mode = 'wander'
@@ -83,7 +83,6 @@ class Npc:
 
 
   def update(self):
-
     # Are we dead:
     if self.hp[0] < 1:
       if self.mode != 'dead':

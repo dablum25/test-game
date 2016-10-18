@@ -1,4 +1,5 @@
 from item import Item
+import ConfigParser
 import copy
 
 class ShopItem:
@@ -35,10 +36,25 @@ class ShopItem:
            'icon': self.icon,
            'equipped': False }
     world.items[name] = Item(**copy.deepcopy(bh))
+  
+def load_shops(world):
+
+  config = ConfigParser.RawConfigParser()
+  config.read('data/shops.ini')
+
+  shops = []
+  
+  for shop in config.sections():
+    title    = config.get(shop,'title')
+    for_sale = config.get(shop,'for_sale').split(',')
+    
+    world.shops[shop] = Shop(shop, title, for_sale, world)  
+    
+
 
 class Shop:
 
-  def __init__(self, name, title, itemset, world):
+  def __init__(self, name, title, for_sale, world):
 
     self.title = title
     self.name = name
@@ -47,36 +63,22 @@ class Shop:
 
     self.message = "Welcome to my shop! What would you like to buy?"
 
-    if itemset == 'armorer':
-      self.armorer()
-    elif itemset == 'outfitter':
-      self.outfitter()
-    elif itemset == 'magic':
-      self.magic()
+    config = ConfigParser.RawConfigParser()
+    config.read('data/items.ini')
 
-  def armorer(self):
-    '''
-    Advanced weapons and armor
-    '''
-    self.inventory['sword']  = ShopItem('Sword','sword','weapon',3,3,0,10,'sword')
-    self.inventory['bow']  = ShopItem('Small Bow','bow','weapon',2,3,0,10,'bow')
-    self.inventory['chain_armor']  = ShopItem('Chain','chain','armor',0,0,4,10,'chain_armor')
+    for sale_item in for_sale:
+      title = config.get(sale_item,'title')
+      gear_type = config.get(sale_item,'gear_type')
+      slot = config.get(sale_item,'slot')
+      hit = config.getint(sale_item,'hit')
+      dam = config.getint(sale_item,'dam')
+      arm = config.getint(sale_item,'arm')
+      value = config.getint(sale_item,'value')
+      icon = config.get(sale_item,'icon')
 
-  def outfitter(self):
-    '''
-    Basic gear
-    '''
-    self.inventory['sword']  = ShopItem('Sword','sword','weapon',3,3,0,10,'sword')
-    self.inventory['bow']  = ShopItem('Small Bow','bow','weapon',2,3,0,10,'bow')
-    self.inventory['hood']   = ShopItem('Hood','clothhood','head',0,0,1,10,'cloth_hood')
-    self.inventory['wand']   = ShopItem('Wooden Wand','wand','weapon',1,0,0,10,'wand')
+      self.inventory[sale_item] = ShopItem(title, gear_type, slot, hit, dam, arm, value, icon)
 
-  def magic(self):
-    '''
-    Magical weapons and equipment
-    '''
-    self.inventory['hood']   = ShopItem('Hood','clothhood','head',0,0,1,10,'cloth_hood')
-    self.inventory['wand']   = ShopItem('Wooden Wand','wand','weapon',1,0,0,10,'wand')
+    print "Loaded SHOP",self.name
 
   def get_inventory(self):
 

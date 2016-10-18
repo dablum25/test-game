@@ -4,7 +4,7 @@ from twisted.internet import task, reactor
 
 class Monster:
 
-  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm, world, spawn=None):
+  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm, mode, world, spawn):
     
     self.source = source
     self.title = title
@@ -21,7 +21,7 @@ class Monster:
     self.arm = arm
 
     self.world = world
-    self.mode = 'wait' # wander, fight, flee, wait, dead
+    self.mode = mode # wander, fight, flee, wait, dead
     self.target = None
 
     self.update_task = task.LoopingCall(self.update)
@@ -40,7 +40,6 @@ class Monster:
     self.hp[0] -= damage
 
   def update(self):
-
     # Are we dead:
     if self.hp[0] < 1:
       if self.mode != 'dead':
@@ -57,7 +56,6 @@ class Monster:
         self.hp[0] = self.hp[1]
 
     elif self.mode == 'wander':
-      
       # 50% chance we wander
       if random.choice([True, False]):
         return

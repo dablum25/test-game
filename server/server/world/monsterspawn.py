@@ -63,6 +63,7 @@ class MonsterSpawnFromZone:
     self.name = name
     self.source = self.config.get(name, 'source')
     self.title = self.config.get(name, 'title')
+    self.mode = self.config.get(name, 'mode')
     self.x = x/32
     self.y = y/32
     self.w = w/32
@@ -83,6 +84,7 @@ class MonsterSpawnFromZone:
     # spawn, source, title, x, y, zone, hp, mp, hit, arm, dam
     self.build_hash = { 'source': self.source,
                         'title': self.title,
+                        'mode': self.mode,
                         'zone': self.zone,
                         'hp': self.hp,
                         'mp': self.mp,

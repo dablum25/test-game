@@ -8,7 +8,7 @@ from twisted.internet import reactor
 from db import Db
 from monsterspawn import MonsterSpawn
 from npcspawn import NpcSpawn
-from player import Player
+from player import Player,load_players
 from monster import Monster
 from zone import Zone
 from spell import Spell
@@ -16,7 +16,7 @@ from container import Container
 from item import Item
 from npc import Npc
 from warp import Warp
-from shop import Shop
+from shop import Shop,load_shops
 from quest import Quest
 
 class Game:
@@ -33,11 +33,18 @@ class Game:
 
     # For logging events
     self.last_event = 0
+    
+
+    # Items table
+    self.items = {}
+    for item in self.db.load_items():
+      self.items[item['name']] = Item(**item)
 
     # Players table
     self.players = {}
-    for player in self.db.load_players():
-      self.players[player['name']] = Player(world=self,**player)
+    load_players(self, 4,14,'start')
+    #for player in self.db.load_players():
+    #  self.players[player['name']] = Player(world=self,**player)
 
     # Monsters table
     self.monsters = {}
@@ -54,26 +61,23 @@ class Game:
     # For generated items
     self.item_index = 0
     
+    # Monster Spawn list
+    self.monster_spawns = []
+    #for spawn in self.db.load_monster_spawns():
+    #  self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
+    
     # Zones table
     self.zones = {}
     for zone in self.db.load_zones():
       self.zones[zone['name']] = Zone(world=self,**zone)
       #self.zones[zone['name']] = ZoneWithObjects(world=self,**zone)
     
-    # Monster Spawn list
-    self.monster_spawns = []
-    #for spawn in self.db.load_monster_spawns():
-    #  self.monster_spawns.append(MonsterSpawn(world=self,**spawn))
-
-    # Items table
-    self.items = {}
-    for item in self.db.load_items():
-      self.items[item['name']] = Item(**item)
 
     # Shops table
     self.shops = {}
-    for shop in self.db.load_shops():
-      self.shops[shop['name']] = Shop(world=self,**shop)
+    load_shops(self)
+    #for shop in self.db.load_shops():
+    #  self.shops[shop['name']] = Shop(world=self,**shop)
 
     # Quests table
     self.quests = {}

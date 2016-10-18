@@ -1,6 +1,54 @@
 import time
 import random
+import ConfigParser
+from item import Item
 from twisted.internet import task, reactor
+
+
+def load_players(world, x, y, zone):
+
+  pconfig = ConfigParser.RawConfigParser()
+  pconfig.read('data/players.ini')
+  
+  iconfig = ConfigParser.RawConfigParser()
+  iconfig.read('data/items.ini')
+  
+  
+  for name in pconfig.sections():
+    title = pconfig.get(name,'title')
+    gender = pconfig.get(name,'gender')
+    body = pconfig.get(name,'body')
+    hairstyle = pconfig.get(name,'hairstyle')
+    haircolor = pconfig.get(name,'haircolor')
+    spells = pconfig.get(name,'spells').split(',')
+    hp = pconfig.getint(name,'hp')
+    mp = pconfig.getint(name,'mp')
+    hit = pconfig.getint(name,'hit')
+    dam = pconfig.getint(name,'dam')
+    arm = pconfig.getint(name,'arm')
+    password = pconfig.get(name,'password')
+    items = pconfig.get(name,'items').split(',')
+    spells = pconfig.get(name,'spells').split(',')
+    
+    world.players[name] = Player(name, title, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world)  
+  
+
+    # Load player items
+    for iname in items:
+      title = iconfig.get(iname,'title')
+      gear_type = iconfig.get(iname,'gear_type')
+      player = name
+      slot = iconfig.get(iname,'slot')
+      container = None
+      hit = iconfig.getint(iname,'hit')
+      dam = iconfig.getint(iname,'dam')
+      arm = iconfig.getint(iname,'arm')
+      equipped = False
+      icon = iconfig.get(iname,'icon')
+      value = iconfig.get(iname,'value')
+
+
+      world.items[iname] = Item(iname, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon, value)
 
 class Player:
 
@@ -43,6 +91,8 @@ class Player:
     # Schedule pathfollow task
     self.pathfollow_task = task.LoopingCall(self.pathfollow)
     self.pathfollow_task.start(0.50)
+    
+    print "Loaded PLAYER",self.state()
 
   def state(self):
     

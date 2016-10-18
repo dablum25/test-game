@@ -15,6 +15,8 @@ class Item:
     self.icon = icon
     self.value = value
 
+    print "Loaded ITEM",self.state()
+
   def state(self):
     
     return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm, 'value': self.value }

@@ -53,6 +53,7 @@ class Zone:
         # Create monster spawn
         NpcSpawnFromZone(npc_name, x, y, self.name, max_spawn, spawn_delay, self.world)
      
+    print "Loaded ZONE",self.name
      
   def heuristic(self, a,b):
     (x1,y1) = a
