@@ -1,21 +1,33 @@
+import ConfigParser
+
 class Item:
 
-  def __init__(self, name, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon, value):
+  index = 0
+  config = ConfigParser.RawConfigParser()
+  config.read('data/items.ini')
 
-    self.title = title
-    self.name = name
-    self.player = player
-    self.equipped = equipped
+  def getid(self):
+    
+    Item.index += 1
+    return Item.index
+
+  def __init__(self, name, player, container, equipped, world):
+
+    self.name      = "%s-%s" % (name, self.getid())
+    self.player    = player
     self.container = container
-    self.gear_type = gear_type # 'none', 'leather', 'chain', 'plate', 'hat', 'clothhood', 'chainhood', 'chainhat', 'helm', 'sword', 'spear', 'wand', 'bow'
-    self.slot = slot # 'head', 'weapon', 'armor', or 'none'
-    self.hit = hit
-    self.dam = dam
-    self.arm = arm
-    self.icon = icon
-    self.value = value
+    self.equipped  = equipped
+    self.world     = world
+    self.title     = Item.config.get(name, 'title')
+    self.gear_type = Item.config.get(name, 'gear_type')
+    self.slot      = Item.config.get(name, 'slot')
+    self.hit       = Item.config.getint(name, 'hit')
+    self.dam       = Item.config.getint(name, 'dam')
+    self.arm       = Item.config.getint(name, 'arm')
+    self.icon      = Item.config.get(name,'icon')
+    self.value     = Item.config.getint(name, 'value')
 
-    print "Loaded ITEM",self.state()
+    self.world.items[self.name] = self
 
   def state(self):
     

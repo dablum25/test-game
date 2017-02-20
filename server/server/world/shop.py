@@ -8,34 +8,21 @@ class ShopItem:
   '''
   mi_index = 0
 
-  def __init__(self, title, gear_type, slot, hit, dam, arm, value, icon):
-
-    self.title = title
+  def __init__(self, name, title, gear_type, slot, hit, dam, arm, value, icon):
+    
+    self.name      = name
+    self.title     = title
     self.gear_type = gear_type
-    self.slot = slot
-    self.hit = hit
-    self.dam = dam
-    self.arm = arm
-    self.value = value 
-    self.icon = icon
+    self.slot      = slot
+    self.hit       = hit
+    self.dam       = dam
+    self.arm       = arm
+    self.value     = value 
+    self.icon      = icon
 
   def create(self, buyer_name, world):
     
-    name = "%s-%s" % ( self.gear_type, self.mi_index )
-    self.mi_index += 1
-    
-    bh = { 'name': name, 
-           'title': self.title, 
-           'gear_type': self.gear_type, 
-           'player': buyer_name, 
-           'slot': self.slot,
-           'container': None,
-           'hit': self.hit, 
-           'dam': self.dam, 
-           'arm': self.arm,
-           'icon': self.icon,
-           'equipped': False }
-    world.items[name] = Item(**copy.deepcopy(bh))
+    Item(self.name, player=buyer_name, container=None, equipped=False, world=world)
   
 def load_shops(world):
 
@@ -76,7 +63,7 @@ class Shop:
       value = config.getint(sale_item,'value')
       icon = config.get(sale_item,'icon')
 
-      self.inventory[sale_item] = ShopItem(title, gear_type, slot, hit, dam, arm, value, icon)
+      self.inventory[sale_item] = ShopItem(sale_item, title, gear_type, slot, hit, dam, arm, value, icon)
 
     print "Loaded SHOP",self.name
 

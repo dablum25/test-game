@@ -32,23 +32,9 @@ def load_players(world, x, y, zone):
     
     world.players[name] = Player(name, title, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world)  
   
-
     # Load player items
     for iname in items:
-      title = iconfig.get(iname,'title')
-      gear_type = iconfig.get(iname,'gear_type')
-      player = name
-      slot = iconfig.get(iname,'slot')
-      container = None
-      hit = iconfig.getint(iname,'hit')
-      dam = iconfig.getint(iname,'dam')
-      arm = iconfig.getint(iname,'arm')
-      equipped = False
-      icon = iconfig.get(iname,'icon')
-      value = iconfig.get(iname,'value')
-
-
-      world.items[iname] = Item(iname, title, gear_type, player, slot, container, hit, dam, arm, equipped, icon, value)
+      Item(iname, player=name, container=None, equipped=False, world=world)
 
 class Player:
 
@@ -79,10 +65,6 @@ class Player:
     self.hairstyle = hairstyle
     self.haircolor = haircolor
     self.body = body
-
-    # Triggers
-    self.trigger_refresh = False
-    self.trigger_statsupdate = False
 
     # Schedule update task
     self.update_task = task.LoopingCall(self.update)
@@ -128,8 +110,27 @@ class Player:
       self.target = attacker
 
     self.hp[0] -= damage
-    print "DAMAGE!"
-    self.trigger_statsupdate = True
+    self.world.events.append(self.world.player_stats(self.name))
+
+  def warp(self, zone, x, y):
+    
+    # Drop player
+    self.world.events.append({ 'type': 'dropplayer', 'name': self.name, 'zone': self.zone })
+    
+    self.x = x
+    self.y = y
+    self.zone = zone
+    self.path = []
+  
+    # Add player back 
+    event = { 'type': 'addplayer' }
+    event.update(self.state())
+    self.world.events.append(event)
+     
+    # Tell client to refresh
+    event = self.world.refresh(self.name)
+    event['zone'] = "player_%s" % self.name
+    self.world.events.append(event)
 
   def pathfollow(self):
     
@@ -148,7 +149,6 @@ class Player:
         self.direction = 'south'  
       
       self.world.events.append({ 'type': 'playermove', 'name': self.name, 'zone': self.zone, 'direction': self.direction, 'start': (self.x,self.y), 'end': dest })
-      
       self.x = dest[0]
       self.y = dest[1]
       
@@ -171,6 +171,53 @@ class Player:
     for warp in self.world.warps:
       if warp.start_x == self.x and warp.start_y == self.y and warp.start_zone == self.zone:
         self.world.warp(self, warp)
+   
+   
+    # Are we on the edge of the map? Then warp
+    zone = self.world.zones[self.zone]
+    if self.x == 0:
+      # Warp west
+      if zone.borders['west']:
+        if self.world.zones[zone.borders['west']]:
+          end_zone = self.world.zones[zone.borders['west']]
+          if end_zone:
+            end_x = end_zone.width - 2
+            end_y = self.y
+            self.path = []
+            self.warp(end_zone.name, end_x, end_y)
+
+    elif self.x == zone.width - 1:
+      # Warp east
+      if zone.borders['east']:
+        if self.world.zones[zone.borders['east']]:
+          end_zone = self.world.zones[zone.borders['east']]
+          if end_zone:
+            end_x = 1
+            end_y = self.y
+            self.path = []
+            self.warp(end_zone.name, end_x, end_y)
+    
+    elif self.y == 0:
+      # Warp south
+      if zone.borders['south']:
+        if self.world.zones[zone.borders['south']]:
+          end_zone = self.world.zones[zone.borders['south']]
+          if end_zone:
+            end_x = self.x
+            end_y = end_zone.height - 2
+            self.path = []
+            self.warp(end_zone.name, end_x, end_y)
+    
+    elif self.y == zone.height - 1:
+      # Warp north
+      if zone.borders['north']:
+        if self.world.zones[zone.borders['north']]:
+          end_zone = self.world.zones[zone.borders['north']]
+          if end_zone:
+            end_x = self.x
+            end_y = 1
+            self.path = []
+            self.warp(end_zone.name, end_x, end_y)
 
     if self.mode == 'wait':
       # heal 10% per second while waiting

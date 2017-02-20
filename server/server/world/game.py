@@ -30,33 +30,27 @@ class Game:
     # For logging events
     self.last_event = 0
     
+    # Warps table
+    self.warps = []
 
     # Items table
+    #self.item_index = 0
     self.items = {}
-    for item in self.db.load_items():
-      self.items[item['name']] = Item(**item)
 
     # Players table
     self.players = {}
-    load_players(self, 4,14,'start')
+    load_players(self, 16, 17, 'weltstone_farm')
 
     # Monsters table
-    self.monster_spawns = []
     self.monsters = {}
-    self.monster_index = 0 # for randomly spawned monsters
     
     # Npcs table
-    self.npc_spawns = []
     self.npcs = {}
-    self.npc_index = 0
     
     # Containers table
     self.containers = {}
     self.container_index = 0
 
-    # For generated items
-    self.item_index = 0
-    
     # Zones table
     self.zones = {}
     load_zones(self)
@@ -67,18 +61,12 @@ class Game:
 
     # Quests table
     self.quests = {}
-    for quest in self.db.load_quests():
-      self.quests[quest['name']] = Quest(world=self,**quest)
 
     # Spells table
     self.spells = {}
-    for spell in self.db.load_spells():
-      self.spells[spell['name']] = Spell(**spell)
 
-    # Warps table
-    self.warps = []
-    for warp in self.db.load_warps():
-      self.warps.append(Warp(**warp))
+    #for warp in self.db.load_warps():
+    #  self.warps.append(Warp(**warp))
 
     
 
@@ -105,7 +93,7 @@ class Game:
       self.player_drop(player_name, data['item'])
 
     elif data['action'] == 'use':
-      self.player_use(player_name, data['use'])
+      self.player_use(player_name, data['item'])
     
     elif data['action'] == 'settarget':
       send_now = self.set_player_target(player_name, data['x'], data['y'])
@@ -130,17 +118,6 @@ class Game:
 
     elif data['action'] == 'refresh':
       send_now = self.refresh(player_name)
-
-    # Triggers
-    if self.players[player_name].trigger_refresh:
-      send_now = self.refresh(player_name)
-      self.players[player_name].trigger_refresh = False
-    
-    # Triggers
-    #if self.players[player_name].trigger_statsupdate:
-    #  send_now = self.player_stats(player_name)
-    #  self.players[player_name].trigger_statsupdate = False
-    
     
     return send_now
 
@@ -150,7 +127,7 @@ class Game:
     
     stats = { "title": player.title, "hit": self.get_player_hit(player_name), "dam": self.get_player_dam(player_name), "arm": self.get_player_arm(player_name), "hp": player.hp, "mp": player.mp, "gold": player.gold }
   
-    return { "type": "playerstats", "stats": stats }
+    return { "type": "playerstats", "stats": stats, "zone": "player_%s" % player_name }
 
   def player_goto(self, player_name, x, y):
     player = self.players[player_name]
@@ -158,6 +135,8 @@ class Game:
     start = player.x,player.y
     end = x,y 
     player.path = zone.get_path(start,end)
+    
+    #self.events.append({"type": "playerpath", "name": player_name, "path": player.path, "zone": player.zone})
 
   def refresh(self, player_name):
 
@@ -192,12 +171,12 @@ class Game:
   def get_events(self, player_name, upto):
 
     # Collect all events from the relevant zone    
-    event_list = [ e for e in self.events[upto:] if e['zone'] in [ 'all', self.players[player_name].zone ] ]
+    event_list = [ e for e in self.events[upto:] if e['zone'] in [ 'all', self.players[player_name].zone, "player_%s" % player_name ] ]
 
     return { "type": "events", "events": event_list }
 
   def player_join(self, player_name):
-   
+    
     # New player data
     self.players[player_name].online = True
       
@@ -269,7 +248,9 @@ class Game:
     event.update(player.state())
     self.events.append(event)
     
-    player.trigger_refresh = True
+    player_refresh = self.refresh(player.name)
+    player_refresh['zone'] = "player_%s" % player.name
+    self.events.append(player_refresh)
 
   def monster_die(self, name):
 
@@ -359,7 +340,7 @@ class Game:
   def stopwalk(self, player_name):
     self.players[player_name].mode = 'wait'
 
-
+    
   def warp(self, player, target_warp):
     
     # Drop player
@@ -368,15 +349,17 @@ class Game:
     player.x = target_warp.end_x
     player.y = target_warp.end_y
     player.zone = target_warp.end_zone
-
+    player.path = []
     
     # Add addplayer event
     event = { 'type': 'addplayer' }
     event.update(player.state())
     self.events.append(event)
 
-    # Trigger refresh for player
-    player.trigger_refresh = True
+    player_refresh = self.refresh(player.name)
+    player_refresh['zone'] = "player_%s" % player.name
+    self.events.append(player_refresh)
+
 
   def chat(self, player_name, message):
     
@@ -479,7 +462,7 @@ class Game:
       return
   
     item_title = self.items[item_name].title
-    del self.items[item_name]
+    #del self.items[item_name]
     
     return { 'type': 'message', 'message': "You use the %s." % item_title } 
     
@@ -511,7 +494,7 @@ class Game:
       return
     
     # Skip if this item cannot be equipped
-    if self.items[item_name].slot == 'none':
+    if self.items[item_name].slot == None:
       return
     
     # Skip if this item is already equipped
@@ -538,7 +521,7 @@ class Game:
     elif slot == 'head':
       self.events.append({ 'type': 'setplayerhead', 'name': player_name, 'zone':  zone, 'head': gear_type,})
 
-    self.players[player_name].triger_statsupdate = True    
+    self.events.append(self.player_stats(player_name))
     
   def player_unequip(self, player_name, item_name):
 
@@ -570,7 +553,7 @@ class Game:
     elif slot == 'head':
       self.events.append({ 'type': 'setplayerhead', 'name': player_name, 'zone':  zone, 'head': 'none',})
     
-    self.players[player_name].triger_statsupdate = True    
+    self.events.append(self.player_stats(player_name))
 
   def player_inventory(self, player_name):
     
@@ -579,7 +562,7 @@ class Game:
     for k,v in self.items.items():
       if v.player == player_name:
         inv[k] = v.state()
-
+    
     return { 'type': 'inventory', 'inventory': inv }
 
   def player_disengage(self, player_name):
@@ -705,6 +688,9 @@ class Game:
     
     # Follow event queue
     for e in self.events[self.last_event:]:
+      
+      if e['type'] == 'monstermove':
+        continue 
       print "%s %s: %s" % (e['type'].upper(), e['zone'].upper(), e)
 
     self.last_event = len(self.events)

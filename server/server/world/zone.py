@@ -3,6 +3,7 @@ import time
 from astar import *
 from monsterspawn import MonsterSpawn
 from npcspawn import NpcSpawn
+from warp import Warp
 import ConfigParser
 
 def load_zones(world):
@@ -18,20 +19,21 @@ def load_zones(world):
     south = config.get(name,'south')
     east =  config.get(name,'east')
     west = config.get(name,'west')
-
-    world.zones[name] = Zone(name, source, title, world)
+    borders = { 'north': north, 'south': south, 'east': east, 'west': west }
+    world.zones[name] = Zone(name, source, title, borders, world)
 
 class Zone:
   '''
   Zone with astar pathfinding.
   '''
 
-  def __init__(self, name, source, title, world):
+  def __init__(self, name, source, title, borders, world):
 
     self.name   = name
     self.source = source
     self.title  = title
     self.world  = world
+    self.borders = borders
     
     # Logic to load zone file
     self.data = pytmx.TiledMap(source)
@@ -53,7 +55,7 @@ class Zone:
         h = int(o.height/32)
         max_spawn = int(o.properties['max_spawn'])
         spawn_delay = float(o.properties['spawn_delay'])
-        monster_name = o.properties['monster_name']
+        monster_name = o.name
 
         # Create monster spawn
         MonsterSpawn(monster_name, x, y, w, h, self.name, max_spawn, spawn_delay, self.world)
@@ -65,11 +67,22 @@ class Zone:
         h = int(o.height/32)
         max_spawn = int(o.properties['max_spawn'])
         spawn_delay = float(o.properties['spawn_delay'])
-        npc_name = o.properties['npc_name']
+        npc_name = o.name
 
         # Create npc spawn
-        NpcSpawn(npc_name, x, y, self.name, max_spawn, spawn_delay, self.world)
-     
+        NpcSpawn(npc_name, x, y, w, h, self.name, max_spawn, spawn_delay, self.world)
+
+      if o.type == 'warp':
+        x = int(o.x/32)
+        y = self.height - int(o.y/32)
+        #w = int(o.width/32)
+        #h = int(o.height/32)
+        end_zone = o.properties['end_zone']
+        end_x = int(o.properties['end_x'])
+        end_y = int(o.properties['end_y'])
+        
+        self.world.warps.append(Warp(self.name, x, y, end_zone, end_x, end_y))
+
     print "Loaded ZONE",self.name
      
   def heuristic(self, a,b):

@@ -1,34 +1,46 @@
 import time
 import random
+import ConfigParser
 from twisted.internet import task, reactor
 
 class Npc:
 
-  def __init__(self, name, title, gender, body, hairstyle, haircolor, armor, head, weapon, x, y, zone, hp, mp, hit, dam, arm, shop, quest, villan, mode, world, spawn=None):
+  config = ConfigParser.RawConfigParser()
+  config.read('data/npcs.ini')
+  index  = 0
 
-    self.title = title
-    self.name = name
-    self.x = x
-    self.y = y
-    self.zone = zone
-    self.free_at = time.time()
-    self.target = None
-    self.fighting = False
-    self.running = False
-    self.hp = hp
-    self.mp = hp 
-    self.hit = hit
-    self.dam = dam
-    self.arm = arm
-    self.mode = mode
+  def getid(self):
+    
+    Npc.index += 1
+    return Npc.index
+
+  def __init__(self, name, x, y, zone, world, spawn):
+
+    self.name  = "%s-%s" % (name, self.getid())
+    self.x     = x
+    self.y     = y
+    self.zone  = zone
     self.world = world
-    self.gender = gender
-    self.body = body
-    self.hairstyle = hairstyle
-    self.haircolor = haircolor
-    self.armor = armor
-    self.head = head
-    self.weapon = weapon
+    self.spawn = spawn
+
+    self.title     = Npc.config.get(name, 'title')
+    self.hp        = [ Npc.config.getint(name, 'hp'), Npc.config.getint(name, 'hp') ]
+    self.mp        = [ Npc.config.getint(name, 'mp'), Npc.config.getint(name, 'mp') ]
+    self.hit       = Npc.config.getint(name, 'hit')
+    self.dam       = Npc.config.getint(name, 'dam')
+    self.arm       = Npc.config.getint(name, 'arm')
+    self.mode      = Npc.config.get(name, 'mode')
+    self.gender    = Npc.config.get(name, 'gender')
+    self.body      = Npc.config.get(name, 'body')
+    self.hairstyle = Npc.config.get(name, 'hairstyle')
+    self.haircolor = Npc.config.get(name, 'haircolor')
+    self.armor     = Npc.config.get(name, 'armor')
+    self.head      = Npc.config.get(name, 'head')
+    self.weapon    = Npc.config.get(name, 'weapon')
+    self.shop      = Npc.config.get(name, 'shop')
+    self.quest     = Npc.config.get(name, 'quest')
+    self.villan    = Npc.config.getboolean(name, 'villan')
+    
     self.attack_type = 'slash'
     
     if self.weapon in [ 'sword', 'wand' ]:
@@ -37,25 +49,14 @@ class Npc:
       self.attack_type = 'thrust'
     elif self.weapon in [ 'bow' ]:
       self.attack_type = 'shoot'
-
-    self.spawn = spawn
-
-    # Merchant shop
-    self.shop = shop
-
-    # Quest info
-    self.quest = quest
-
-
-    # bad guy
-    self.villan = villan
-
+    
     self.update_task = task.LoopingCall(self.update)
     self.update_task.start(1.0)
-   
-    
-    print "Loaded NPC",self.state()
-    
+
+    self.world.npcs[self.name] = self
+      
+    self.world.events.append({ 'type': 'addnpc', 'gender': self.gender, 'body': self.body, 'hairstyle': self.hairstyle, 'haircolor': self.haircolor, 'armor': self.armor, 'head': self.head, 'weapon': self.weapon, 'title': self.title, 'name': self.name, 'x': self.x, 'y': self.y, 'zone': self.zone, 'villan': self.villan })
+
   def state(self):
     
     return { 'title': self.title,

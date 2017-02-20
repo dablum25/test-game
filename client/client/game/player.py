@@ -8,7 +8,6 @@ class Player:
     
     self.x = x
     self.y = y
-
     self.action    = 'wait'
     self.direction = 'south'
     self.armor     = armor
@@ -18,13 +17,14 @@ class Player:
     self.haircolor = haircolor
     self.head      = head
     self.weapon    = weapon
-   
     # Movement
     self.destx = self.x
     self.desty = self.y
     self.spritex = self.x * 32
     self.spritey = self.y * 32
     self.speed = 4
+    
+    self.path = []
 
     self.animation = AnimationSet(self.gender, self.body, self.hairstyle, self.haircolor, self.armor, self.head, self.weapon)
     
@@ -39,7 +39,7 @@ class Player:
 
     # Scheduel our update frequency
     pyglet.clock.schedule_interval(self.update, 1/240.0)
-
+    print "LOADED PLAYER",self.title
   def set_weapon(self,weapon):
 
     self.weapon = weapon
@@ -57,18 +57,6 @@ class Player:
 
   def wait(self, dt=0):
     self.action = 'wait'
-
-  def go(self, direction, start, end):
-
-    self.wait()
-  
-    self.x = start[0]
-    self.y = start[1]
-    self.spritex = start[0] * 32
-    self.spritey = start[1] * 32
-    self.destx = end[0]
-    self.desty = end[1]
-    self.direction = direction
 
   def slash(self):
     
@@ -99,47 +87,56 @@ class Player:
     self.wait()
     self.action = 'die'
 
+  def go(self, direction, start, end):
+    
+    self.direction = direction
+    self.x = start[0]
+    self.y = start[1]
+    self.destx = end[0]
+    self.desty = end[1]
+    self.spritex = self.x * 32
+    self.spritey = self.y * 32
+    print self.x,self.y
+
   def update(self, dt):
     # Don't move if we are doing something else
     if self.action in [ 'slash', 'die', 'cast', 'thrust', 'die', 'bow' ]:
       return
-
+    
+    self.action = 'wait'
+       
     if self.direction == 'north':
       if self.spritey < self.desty * 32:
         self.spritey += self.speed
-        self.action = 'walk'
+        self.action = 'walk'       
       else:
-        self.y = self.desty
         self.spritey = self.desty * 32
-        self.action = 'wait'
+        self.y = self.desty
 
-    elif self.direction == 'south':
+    if self.direction == 'south':
       if self.spritey > self.desty * 32:
         self.spritey -= self.speed
-        self.action = 'walk'
+        self.action = 'walk'       
       else:
-        self.y = self.desty
         self.spritey = self.desty * 32
-        self.action = 'wait'
-    
-    elif self.direction == 'east':
+        self.y = self.desty
+
+    if self.direction == 'east':
       if self.spritex < self.destx * 32:
         self.spritex += self.speed
-        self.action = 'walk'
+        self.action = 'walk'       
       else:
-        self.x = self.destx
         self.spritex = self.destx * 32
-        self.action = 'wait'
+        self.x = self.destx
     
-    elif self.direction == 'west':
+    if self.direction == 'west':
       if self.spritex > self.destx * 32:
         self.spritex -= self.speed
-        self.action = 'walk'
+        self.action = 'walk'       
       else:
-        self.x = self.destx
         self.spritex = self.destx * 32
-        self.action = 'wait'
-     
+        self.x = self.destx
+
   def draw(self, offset, target):
     self.animation.draw(self.action, self.direction, self.spritex, self.spritey, offset)
     self.label.x = self.spritex - offset[0]

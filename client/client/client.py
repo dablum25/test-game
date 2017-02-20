@@ -33,7 +33,7 @@ class Client:
     self.protocol = None
     #self.sounds = SoundSet()
    
-    self.update_task = task.LoopingCall(self.player_stats)
+    #self.update_task = task.LoopingCall(self.player_stats)
 
   def player_stats(self):
 
@@ -70,6 +70,10 @@ class Client:
       self.log(data)
       if self.game.containers.has_key(data['name']):
         del self.game.containers[data['name']]
+    elif data['type'] == 'playerpath':
+      self.log(data)
+      if self.game.players.has_key(data['name']):
+        self.game.players[data['name']].path = data['path']
     elif data['type'] == 'playermove':
       self.log(data)
       if self.game.players.has_key(data['name']):
@@ -82,7 +86,7 @@ class Client:
       if self.game.npcs.has_key(data['name']):
         self.game.npcs[data['name']].go(data['direction'],data['start'])
     elif data['type'] == 'monstermove':
-      self.log(data)
+      #self.log(data)
       if self.game.monsters.has_key(data['name']):
         self.game.monsters[data['name']].go(data['direction'],data['start'])
     elif data['type'] == 'playerstop':
@@ -329,7 +333,11 @@ class Client:
   def logout(self):
     pass
 
-  def get_target(self, x, y):
+  def get_target(self, mx, my):
+    
+    # get x,y of whatever is under mouse
+    x,y = self.game.get_what_at(mx,my)
+
     self.protocol.send({"action": "settarget", "x": x, "y": y})
 
   def goto(self, x, y):
@@ -351,9 +359,8 @@ class Client:
     # Send refresh request
     self.refresh()
 
-    # Get player stats every 2 seconds
+    # Get player stats
     self.player_stats()
-    self.update_task.start(2.0)
 
     @self.window.event
     def on_draw():
@@ -376,10 +383,9 @@ class Client:
     @self.window.event
     def on_mouse_press(x, y, button, modifiers):
      
-      x = (x + self.game.offset[0])/32
-      y = (y + self.game.offset[1])/32
-      
       if button == pyglet.window.mouse.LEFT:
+        x = (x + self.game.offset[0])/32
+        y = (y + self.game.offset[1])/32
         self.goto(x,y)
 
       if button == pyglet.window.mouse.RIGHT:

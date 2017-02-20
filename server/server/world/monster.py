@@ -1,31 +1,52 @@
 import time
 import random
+import ConfigParser
 from twisted.internet import task, reactor
 
 class Monster:
+  
+  config = ConfigParser.RawConfigParser()
+  config.read('data/monsters.ini')
+  index = 0
 
-  def __init__(self, source, name, title, x, y, zone, hp, mp, hit, dam, arm, mode, world, spawn):
+  def getid(self):
     
-    self.source = source
-    self.title = title
-    self.name = name
-    self.x = x
-    self.y = y
-    self.zone = zone
-    self.spawn = spawn
-    
-    self.hp = hp
-    self.mp = mp
-    self.hit = hit
-    self.dam = dam
-    self.arm = arm
+    Monster.index += 1
+    return Monster.index
 
-    self.world = world
-    self.mode = mode # wander, fight, flee, wait, dead
+  def __init__(self, name, x, y, zone, world, spawn):
+    
+    self.name   = "%s-%s" % (name, self.getid())
+    self.world  = world
+    self.x      = x
+    self.y      = y
+    self.zone   = zone
+    self.spawn  = spawn
+
+    self.title  = Monster.config.get(name,'title')
+    self.source = Monster.config.get(name,'source')
+    self.hp     = [ Monster.config.getint(name, 'hp'), Monster.config.get(name,'hp') ]
+    self.hit    = Monster.config.getint(name, 'hit')
+    self.arm    = Monster.config.getint(name, 'dam')
+    self.dam    = Monster.config.getint(name, 'arm')
+    self.mode   = Monster.config.get(name, 'mode')
+    self.loot   = Monster.config.get(name, 'loot')
+
     self.target = None
+
 
     self.update_task = task.LoopingCall(self.update)
     self.update_task.start(1.0)
+
+    self.world.monsters[self.name] = self
+    
+    self.world.events.append({ 'type':   'addmonster', 
+                               'source': self.source, 
+                               'title':  self.title,
+                               'name':   self.name, 
+                               'x':      self.x, 
+                               'y':      self.y, 
+                               'zone':   self.zone })
 
   def state(self):
 
@@ -56,8 +77,8 @@ class Monster:
         self.hp[0] = self.hp[1]
 
     elif self.mode == 'wander':
-      # 50% chance we wander
-      if random.choice([True, False]):
+      # 33% chance we wander
+      if random.choice([True, False, False]):
         return
 
       direction = 'south'
