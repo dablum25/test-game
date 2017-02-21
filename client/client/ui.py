@@ -282,3 +282,50 @@ class PlayerShopItem(HorizontalContainer):
     self.client.sell(self.name)
     self.close(toggle)
     self.delete()
+
+class ContainerManager(Manager):
+
+  def __init__(self, client, inventory=[]):
+
+    self.client = client
+
+    invitems = []
+
+    for name, value in inventory.items():
+      title = value['title']
+      icon  = value['icon']
+      dam   = value['dam']
+      hit   = value['hit']
+      arm   = value['arm']
+      gold  = value['value']
+      invitems.append(Frame(ContainerItem(name, title, icon, self.client, dam, hit, arm, gold), is_expandable=True))
+    
+    self.container_inventory_list = Scrollable(height=256, width=512, is_fixed_size=True, content=VerticalContainer(invitems, align=HALIGN_LEFT))
+
+    self.exit_button = OneTimeButton(label='Close', on_release=self.close)
+    self.inventory_container = HorizontalContainer([self.container_inventory_list, self.exit_button])
+
+    Manager.__init__(self, Frame(self.inventory_container,is_expandable=True), window=self.client.window, theme=UI_THEME, is_movable=True)
+
+  def close(self, toggle):
+    self.delete()
+
+class ContainerItem(HorizontalContainer):
+
+  def __init__(self, name, title, icon, client, dam, hit, arm, gold, desc=""):
+   
+    self.client = client
+    self.name   = name
+    self.title  = title
+    icon        = Graphic(path=['icons', icon])
+    title       = Label(self.title)
+    gold        = Label("%sg" % gold, color=[230,244,68,255])
+    stats       = HorizontalContainer([Label(str(dam), color=[255,100,100,255]),
+                                     Label(str(hit), color=[100,100,255,255]),
+                                     Label(str(arm), color=[100,255,100,255]),])
+
+    buy_button = OneTimeButton(label='Take', on_release=self.take) 
+    HorizontalContainer.__init__(self, [icon,title,gold,stats,buy_button], align=HALIGN_LEFT)
+
+  def take(self, toggle):
+    self.client.take(self.name)

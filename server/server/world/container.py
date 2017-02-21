@@ -1,6 +1,6 @@
 class Container:
 
-  def __init__(self, title, name, x, y, zone,  source, source_w, source_h, source_y, source_x):
+  def __init__(self, title, name, x, y, zone, owner,  source, source_w, source_h, source_y, source_x):
     
     self.title = title
     self.name = name
@@ -8,6 +8,7 @@ class Container:
     self.y = y
     self.zone = zone
     self.source = source
+    self.owner = owner
     self.source_w = source_w
     self.source_h = source_h
     self.source_x = source_x

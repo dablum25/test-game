@@ -6,7 +6,7 @@ from twisted.internet import reactor, task # <- ...importing this reactor!
 import pprint
 from twisted.protocols.ftp import FTPClient
 
-from ui import LoginManager,ConnectManager,ChatWindowManager,InventoryManager,ShopManager,CharacterManager
+from ui import LoginManager,ConnectManager,ChatWindowManager,InventoryManager,ShopManager,CharacterManager,ContainerManager
 from net import GameClientFactory,GameClientProtocol,GameData
 from game.game import Game
 from game.npc import Npc
@@ -29,6 +29,7 @@ class Client:
     self.shopManager = None
     self.popupManager = None
     self.characterManager = None
+    self.containerManager = None
     self.factory = GameClientFactory(self)
     self.protocol = None
     #self.sounds = SoundSet()
@@ -164,6 +165,9 @@ class Client:
     elif data['type'] == 'shop':
       self.log(data)
       self.shopManager = ShopManager(self, data['inventory'], data['player_inventory']['inventory'])
+    elif data['type'] == 'container':
+      self.log(data)
+      self.containerManager = ContainerManager(self, data['inventory'])
     elif data['type'] == 'questdialog':
       self.log(data)
     elif data['type'] == 'playerstats':
@@ -271,6 +275,10 @@ class Client:
   def buy(self, item_name):
     
     self.protocol.send({'action': 'buy', 'item': item_name})
+  
+  def take(self, item_name):
+
+    self.protocol.send({'action': 'take', 'item': item_name})
 
   def sell(self, item_name):
 
@@ -379,7 +387,10 @@ class Client:
       
       if self.characterManager:
         self.characterManager.draw()
-           
+      
+      if self.containerManager:
+        self.containerManager.draw()
+         
     @self.window.event
     def on_mouse_press(x, y, button, modifiers):
      

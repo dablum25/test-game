@@ -95,6 +95,9 @@ class Game:
     elif data['action'] == 'use':
       self.player_use(player_name, data['item'])
     
+    elif data['action'] == 'take':
+      send_now = self.player_take(player_name, data['item'])
+       
     elif data['action'] == 'settarget':
       send_now = self.set_player_target(player_name, data['x'], data['y'])
     
@@ -192,7 +195,7 @@ class Game:
     self.events.append({'type': 'dropmonster', 'name': monster.name, 'title': monster.title, 'zone': monster.zone })
     
     # create container object holding monster treasure
-    name = "container-%s" % self.container_index 
+    container_name = "container-%s" % self.container_index 
     self.container_index += 1
     title = "Remains of %s" % monster.title
     x = monster.x
@@ -200,14 +203,16 @@ class Game:
     zone = monster.zone
     source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corpse?
 
-    self.containers[name] = Container(title, name, x, y, zone, source, 32, 32, 0, 0)
+    self.containers[container_name] = Container(title, container_name, x, y, zone, source, monster.target.name, 32, 32, 0, 0)
     
     # TODO: generate loot for this container from loot.ini
-    
-    self.events.append({'type': 'addcontainer', 'name': name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
+    item = Item('woodsword', None, container_name, False, self)
+    item = Item('dagger', None, container_name, False, self)
+
+    self.events.append({'type': 'addcontainer', 'name': container_name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
     
     # clean up container after 2 min
-    reactor.callLater(120.0, self.cleanup_container, name)
+    reactor.callLater(120.0, self.cleanup_container, container_name)
     
     # Really delete monster
     monster.spawn.spawn_count -= 1
@@ -414,8 +419,13 @@ class Game:
           send_now = { 'type': 'message', 'message': "You are not in range to attack %s" % target.title }
    
     elif target.__class__.__name__ == 'Container':
-      send_now = { 'type': 'message', 'message': "You look in %s" % target.title }
-      # TODO: Send container inventory
+      #send_now = { 'type': 'message', 'message': "You look in %s" % target.title }
+      inv = {}
+      for name,item in self.items.items():
+        if item.container == target.name:
+          inv[name] = { 'title': item.title, 'slot': item.slot, 'hit': item.hit, 'dam': item.dam, 'arm': item.arm, 'value': item.value, 'icon': item.icon }
+
+      send_now = { 'type': 'container', 'title': target.title,  'inventory': inv }
     
     # no fighting players (yet)
     elif target.__class__.__name__ == 'Player':
@@ -436,6 +446,31 @@ class Game:
     self.shops[shop].buy(item_name, player_name)
 
     return { 'type': 'message', 'message': "You bought a %s" % item_name }
+
+  def player_take(self, player_name, item_name):
+
+    if not self.items.has_key(item_name):
+      return
+
+    if not self.items[item_name].container:
+      return
+
+    container_name = self.items[item_name].container
+    
+    if not self.containers.has_key(container_name):
+      return
+
+    if not self.containers[container_name].owner == player_name:
+      return
+
+    if self.items[item_name].player:
+      return
+    
+    # reassign to player
+    self.items[item_name].container = None
+    self.items[item_name].player = player_name
+
+    return { 'type': 'message', 'message': "You took the %s" % item_name }
 
   def player_sell(self, player_name, item_name):
 

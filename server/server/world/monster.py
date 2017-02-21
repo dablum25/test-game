@@ -78,7 +78,10 @@ class Monster:
 
     elif self.mode == 'wander':
       # 33% chance we wander
-      if random.choice([True, False, False]):
+      #if random.choice([True, False, False]):
+      #  return
+
+      if random.random() > 0.10:
         return
 
       direction = 'south'
