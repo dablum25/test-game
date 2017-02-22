@@ -419,7 +419,6 @@ class Game:
           send_now = { 'type': 'message', 'message': "You are not in range to attack %s" % target.title }
    
     elif target.__class__.__name__ == 'Container':
-      #send_now = { 'type': 'message', 'message': "You look in %s" % target.title }
       inv = {}
       for name,item in self.items.items():
         if item.container == target.name:
@@ -427,9 +426,14 @@ class Game:
 
       send_now = { 'type': 'container', 'title': target.title,  'inventory': inv }
     
-    # no fighting players (yet)
     elif target.__class__.__name__ == 'Player':
-      send_now = { 'type': 'message', 'message': "Don't fight with %s!" % target.title }
+      inv = {}
+      for name,item in self.items.items():
+        if item.player == target.name and item.equipped == False:
+          inv[name] = { 'title': item.title, 'slot': item.slot, 'hit': item.hit, 'dam': item.dam, 'arm': item.arm, 'value': item.value, 'icon': item.icon }
+
+      send_now = { 'type': 'give', 'title': "Give to %s" % target.title,  'inventory': inv }
+    
 
     return send_now
 

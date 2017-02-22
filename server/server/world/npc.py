@@ -103,8 +103,7 @@ class Npc:
 
     elif self.mode == 'wander':
       
-      # 50% chance we wander
-      if random.choice([True, False]):
+      if random.random() > 0.10:
         return
 
       direction = 'south'
