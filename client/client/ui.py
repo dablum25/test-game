@@ -324,8 +324,9 @@ class ContainerItem(HorizontalContainer):
                                      Label(str(hit), color=[100,100,255,255]),
                                      Label(str(arm), color=[100,255,100,255]),])
 
-    buy_button = OneTimeButton(label='Take', on_release=self.take) 
-    HorizontalContainer.__init__(self, [icon,title,gold,stats,buy_button], align=HALIGN_LEFT)
+    take_button = OneTimeButton(label='Take', on_release=self.take) 
+    HorizontalContainer.__init__(self, [icon,title,gold,stats,take_button], align=HALIGN_LEFT)
 
   def take(self, toggle):
     self.client.take(self.name)
+    self.delete()

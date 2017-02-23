@@ -203,7 +203,7 @@ class Game:
     zone = monster.zone
     source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corpse?
 
-    self.containers[container_name] = Container(title, container_name, x, y, zone, source, monster.target.name, 32, 32, 0, 0)
+    self.containers[container_name] = Container(title, container_name, x, y, zone, monster.target.name, source, 32, 32, 0, 0)
     
     # TODO: generate loot for this container from loot.ini
     item = Item('woodsword', None, container_name, False, self)
@@ -474,7 +474,7 @@ class Game:
     self.items[item_name].container = None
     self.items[item_name].player = player_name
 
-    return { 'type': 'message', 'message': "You took the %s" % item_name }
+    return { 'type': 'message', 'message': "You took the %s" % self.items[item_name].title }
 
   def player_sell(self, player_name, item_name):
 
