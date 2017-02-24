@@ -26,6 +26,7 @@ class Npc:
     self.title     = Npc.config.get(name, 'title')
     self.hp        = [ Npc.config.getint(name, 'hp'), Npc.config.getint(name, 'hp') ]
     self.mp        = [ Npc.config.getint(name, 'mp'), Npc.config.getint(name, 'mp') ]
+    self.level     = Npc.config.getint(name, 'level')
     self.hit       = Npc.config.getint(name, 'hit')
     self.dam       = Npc.config.getint(name, 'dam')
     self.arm       = Npc.config.getint(name, 'arm')
@@ -40,15 +41,17 @@ class Npc:
     self.shop      = Npc.config.get(name, 'shop')
     self.quest     = Npc.config.get(name, 'quest')
     self.villan    = Npc.config.getboolean(name, 'villan')
-    
+    self.loot      = Npc.config.get(name, 'loot')
+      
     self.attack_type = 'slash'
+    self.target      = None 
     
     if self.weapon in [ 'sword', 'wand' ]:
       self.attack_type = 'slash'
     elif self.weapon in [ 'spear' ]:
       self.attack_type = 'thrust'
     elif self.weapon in [ 'bow' ]:
-      self.attack_type = 'shoot'
+      self.attack_type = 'bow'
     
     self.update_task = task.LoopingCall(self.update)
     self.update_task.start(1.0)
@@ -87,7 +90,7 @@ class Npc:
       if self.mode != 'dead':
         self.mode = 'dead'
         self.world.events.append({ 'type': 'npcdie', 'name': self.name, 'title': self.title, 'zone': self.zone })
-        reactor.callLater(10.0, self.world.cleanup_npc, self)
+        reactor.callLater(2.0, self.world.cleanup_npc, self)
 
     if self.mode == 'wait':
       # heal 10% per second while waiting
@@ -131,7 +134,7 @@ class Npc:
       self.y += y
     
     elif self.mode == 'fighting':
-
+      print "Fighting %s" % self.target.title
       if not self.target:
         self.mode = 'wait'
         return
@@ -142,6 +145,7 @@ class Npc:
         return
     
       if not self.world.in_attack_range(self,self.target):
+        print "not in range!"
         # TODO: get path to target and move close enough to attack
         return
       

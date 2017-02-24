@@ -110,7 +110,7 @@ class Monster:
       self.y += y
     
     elif self.mode == 'fighting':
-
+      print "fighting", self.target.name
       if self.target.mode == 'dead':
         self.mode = 'wait'
         self.target = None

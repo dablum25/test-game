@@ -249,9 +249,50 @@ class Game:
   def cleanup_npc(self, npc):
     # drop npc
     self.events.append({'type': 'dropnpc', 'name': npc.name, 'title': npc.title, 'zone': npc.zone })
-    
-    npc.spawn.spawn_count -= 1
 
+
+    # award exp to killer
+    npc.target.exp += ( npc.level / npc.target.level ) * ( 10 * npc.level )
+
+    # create container object holding npc treasure
+    container_name = "container-%s" % self.container_index 
+    self.container_index += 1
+    title = "Remains of %s" % npc.title
+    x = npc.x
+    y = npc.y
+    zone = npc.zone
+    source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corpse?
+
+    # award random amount of gold 
+    npc.target.gold += random.randint(self.loot[npc.loot].gold_min, self.loot[npc.loot].gold_max)
+    
+    create_container = False
+    # 50% chance of common 
+    for i in self.loot[npc.loot].items_common:
+      if random.random() < 0.5:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
+   
+    # 10% chance of uncommon
+    for i in self.loot[npc.loot].items_uncommon:
+      if random.random() < 0.1:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
+    
+    # 5% chance of rare
+    for i in self.loot[npc.loot].items_rare:
+      if random.random() < 0.05:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
+
+    if create_container:
+      self.containers[container_name] = Container(title, container_name, x, y, zone, npc.target.name, source, 32, 32, 0, 0)
+      self.events.append({'type': 'addcontainer', 'name': container_name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
+    
+    # clean up container after 60 sec
+    reactor.callLater(60.0, self.cleanup_container, container_name)
+
+    npc.spawn.spawn_count -= 1
     del self.npcs[npc.name]
 
   def cleanup_container(self, container_name):
@@ -741,6 +782,7 @@ class Game:
 
     elif attacker.__class__.__name__ == 'Npc':
       attack_type = attacker.attack_type
+      print attack_type, distance
       if attack_type == 'slash':
         if distance < 2:
           return True
@@ -769,9 +811,9 @@ class Game:
     
     # Follow event queue
     for e in self.events[self.last_event:]:
-      
-      #print "%s %s: %s" % (e['type'].upper(), e['zone'].upper(), e)
-      pprint.pprint(e)
+      if e['type'] == 'monstermove':
+        continue
+      print "EVENT %s: %s" % (e['type'], e)
 
     self.last_event = len(self.events)
 
