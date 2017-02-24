@@ -24,6 +24,7 @@ class Monster:
     self.spawn  = spawn
 
     self.title  = Monster.config.get(name,'title')
+    self.level  = Monster.config.getint(name, 'level')
     self.source = Monster.config.get(name,'source')
     self.hp     = [ Monster.config.getint(name, 'hp'), Monster.config.get(name,'hp') ]
     self.hit    = Monster.config.getint(name, 'hit')

@@ -341,11 +341,7 @@ class Client:
   def logout(self):
     pass
 
-  def get_target(self, mx, my):
-    
-    # get x,y of whatever is under mouse
-    x,y = self.game.get_what_at(mx,my)
-
+  def get_target(self, x, y):
     self.protocol.send({"action": "settarget", "x": x, "y": y})
 
   def goto(self, x, y):
@@ -393,10 +389,11 @@ class Client:
          
     @self.window.event
     def on_mouse_press(x, y, button, modifiers):
+        
+      x = (x + self.game.offset[0])/32
+      y = (y + self.game.offset[1])/32
      
       if button == pyglet.window.mouse.LEFT:
-        x = (x + self.game.offset[0])/32
-        y = (y + self.game.offset[1])/32
         self.goto(x,y)
 
       if button == pyglet.window.mouse.RIGHT:

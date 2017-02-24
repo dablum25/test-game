@@ -15,6 +15,8 @@ def load_players(world, x, y, zone):
   
   
   for name in pconfig.sections():
+    level = pconfig.getint(name, 'level')
+    exp = pconfig.getint(name, 'exp')
     title = pconfig.get(name,'title')
     gender = pconfig.get(name,'gender')
     body = pconfig.get(name,'body')
@@ -30,7 +32,7 @@ def load_players(world, x, y, zone):
     items = pconfig.get(name,'items').split(',')
     spells = pconfig.get(name,'spells').split(',')
     
-    world.players[name] = Player(name, title, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world)  
+    world.players[name] = Player(name, title, level, exp, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world)  
   
     # Load player items
     for iname in items:
@@ -38,10 +40,15 @@ def load_players(world, x, y, zone):
 
 class Player:
 
-  def __init__(self, name, title, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world):
+  levels = [ 0, 100, 200, 400, 800, 1600, 3200, 6400, 12800 ]
+
+
+  def __init__(self, name, title, level, exp, gender, body, hairstyle, haircolor, password, x, y, zone, spells, hp, mp, hit, dam, arm, world):
 
     self.title = title
     self.name = name
+    self.level = level
+    self.exp = exp
     self.x = x
     self.y = y
     self.zone = zone
@@ -161,11 +168,25 @@ class Player:
     if not self.online:
       return
 
+    # Set player level
+    if self.exp >= (self.level**2 * 100):
+      self.level += 1
+      self.world.events.append({ 'type': 'message', 'name': self.name, 'zone': self.zone, 'message': "%s has reached level %s" % (self.title, self.level)})
+
+      # reward some stats
+      self.hp[1] += int(self.level * 1.5)
+      self.mp[1] += int(self.level * 1.5)
+      self.arm = int(self.level * 1.5)
+      self.dam = int(self.level * 1.5)
+      self.hit = int(self.level * 1.5)
+
+
+
     if self.hp[0] < 1:
       if self.mode != 'dead':
         self.mode = 'dead'
         self.world.events.append({ 'type': 'playerdie', 'name': self.name, 'title': self.title, 'zone': self.zone })
-        reactor.callLater(10.0, self.world.respawn_player, self)
+        reactor.callLater(3.0, self.world.respawn_player, self)
 
     # Are we on a warp tile?
     for warp in self.world.warps:

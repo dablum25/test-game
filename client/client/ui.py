@@ -159,7 +159,7 @@ class CharacterManager(Manager):
 
     self.client = client
 
-    title = Label(stats['title'],font_size=12)
+    title = Label("%s (%s)" % (stats['title'], stats['level']), font_size=12)
     hp_icon = Graphic(path=['icons','heart'])
     hp  = Label("%s/%s"  % (stats['hp'][0],stats['hp'][1]),font_size=10)
     mp_icon = Graphic(path=['icons','potionBlue'])

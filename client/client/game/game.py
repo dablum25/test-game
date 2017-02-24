@@ -20,42 +20,6 @@ class Game:
 
     self.player_inventory = []
 
-  def get_what_at(self, x, y):
-    for k,m in self.monsters.items():
-      mx = m.spritex - self.offset[0] - 32
-      my = m.spritey - self.offset[1] - 32
-      mw = m.frame_w + 32
-      mh = m.frame_h + 32
-      if x > mx and x < mx + mw and y > my and y < my + mh:
-        print mx,my          
-        return m.x,m.y          
-
-    for k,p in self.players.items():
-      px = p.spritex - self.offset[0] - 8
-      py = p.spritey - self.offset[1] - 8
-      pw = 40
-      ph = 72
-      if x > px and x < px + pw and y > py and y < py + ph:
-        return p.x,p.y          
-
-    for k,n in self.npcs.items():
-      nx = n.spritex - self.offset[0] - 8
-      ny = n.spritey - self.offset[1] - 8
-      nw = 40
-      nh = 72
-      if x > nx and x < nx + nw and y > ny and y < ny + nh:
-        return n.x,n.y          
-
-    for k,c in self.containers.items():
-      cx = c.x * 32 - self.offset[0] - 8
-      cy = c.y * 32 - self.offset[1] - 8
-      cw = 40
-      ch = 56
-      if x > cx and x < cx + cw and y > cy and y < cy + ch:
-        return c.x,c.y          
-
-
-    return None,None
   def load(self, player_name, zone_source, players, monsters, npcs, containers):
     
     self.player_name = player_name

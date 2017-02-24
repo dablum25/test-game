@@ -2,6 +2,7 @@ import time
 import os,ConfigParser
 import random
 import math
+import pprint
 
 from twisted.internet import reactor
 
@@ -14,6 +15,7 @@ from item import Item
 from warp import Warp
 from shop import Shop,load_shops
 from quest import Quest
+from loot import Loot,load_loot
 
 class Game:
 
@@ -39,7 +41,7 @@ class Game:
 
     # Players table
     self.players = {}
-    load_players(self, 16, 17, 'weltstone_farm')
+    load_players(self, 17, 11, 'weltstone_farm')
 
     # Monsters table
     self.monsters = {}
@@ -58,6 +60,10 @@ class Game:
     # Shops table
     self.shops = {}
     load_shops(self)
+
+    # Loot table
+    self.loot = {}
+    load_loot(self)
 
     # Quests table
     self.quests = {}
@@ -128,7 +134,7 @@ class Game:
 
     player = self.players[player_name]
     
-    stats = { "title": player.title, "hit": self.get_player_hit(player_name), "dam": self.get_player_dam(player_name), "arm": self.get_player_arm(player_name), "hp": player.hp, "mp": player.mp, "gold": player.gold }
+    stats = { "title": player.title, "hit": self.get_player_hit(player_name), "dam": self.get_player_dam(player_name), "arm": self.get_player_arm(player_name), "hp": player.hp, "mp": player.mp, "gold": player.gold, "exp": player.exp, "level": player.level }
   
     return { "type": "playerstats", "stats": stats, "zone": "player_%s" % player_name }
 
@@ -194,6 +200,9 @@ class Game:
     # drop monster
     self.events.append({'type': 'dropmonster', 'name': monster.name, 'title': monster.title, 'zone': monster.zone })
     
+    # award exp to killer
+    monster.target.exp += ( monster.level / monster.target.level ) * ( 10 * monster.level )
+
     # create container object holding monster treasure
     container_name = "container-%s" % self.container_index 
     self.container_index += 1
@@ -203,16 +212,34 @@ class Game:
     zone = monster.zone
     source = 'data/LPC Base Assets/tiles/chests.png' #TODO: gravestone? corpse?
 
-    self.containers[container_name] = Container(title, container_name, x, y, zone, monster.target.name, source, 32, 32, 0, 0)
+    # award random amount of gold 
+    monster.target.gold += random.randint(self.loot[monster.loot].gold_min, self.loot[monster.loot].gold_max)
     
-    # TODO: generate loot for this container from loot.ini
-    item = Item('woodsword', None, container_name, False, self)
-    item = Item('dagger', None, container_name, False, self)
+    create_container = False
+    # 50% chance of common 
+    for i in self.loot[monster.loot].items_common:
+      if random.random() < 0.5:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
+   
+    # 10% chance of uncommon
+    for i in self.loot[monster.loot].items_uncommon:
+      if random.random() < 0.1:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
+    
+    # 5% chance of rare
+    for i in self.loot[monster.loot].items_rare:
+      if random.random() < 0.05:
+        create_container = True
+        item = Item(i, None, container_name, False, self)
 
-    self.events.append({'type': 'addcontainer', 'name': container_name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
+    if create_container:
+      self.containers[container_name] = Container(title, container_name, x, y, zone, monster.target.name, source, 32, 32, 0, 0)
+      self.events.append({'type': 'addcontainer', 'name': container_name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
     
-    # clean up container after 2 min
-    reactor.callLater(120.0, self.cleanup_container, container_name)
+    # clean up container after 60 sec
+    reactor.callLater(60.0, self.cleanup_container, container_name)
     
     # Really delete monster
     monster.spawn.spawn_count -= 1
@@ -289,10 +316,22 @@ class Game:
     tgt = None
     objtype = None
 
-    for thing in list(piz + miz + niz + ciz):
-      if thing.x == x and thing.y == y:
-        tgt = thing
+    # get thing closest to x,y
+    all_things = list(piz + miz + niz + ciz)
+    all_things_sorted = sorted(all_things, key=lambda z: math.sqrt( ((x-z.x)**2)+((y-z.y)**2) ))
     
+    # if nothing found, unset target
+    if len(all_things_sorted) < 1:
+      self.players[player_name].target = None
+      return { 'type': 'unsettarget', }
+    else:
+      tgt = all_things_sorted[0]
+    
+    # if too far from mouse, unset target
+    if math.sqrt( ((x-tgt.x)**2)+((y-tgt.y)**2) ) > 3:
+      self.players[player_name].target = None
+      return { 'type': 'unsettarget', }
+
     if tgt:
       self.players[player_name].target = tgt
       return { 'type': 'settarget', 'name': tgt.name, 'objtype': tgt.__class__.__name__ }
@@ -423,8 +462,11 @@ class Game:
       for name,item in self.items.items():
         if item.container == target.name:
           inv[name] = { 'title': item.title, 'slot': item.slot, 'hit': item.hit, 'dam': item.dam, 'arm': item.arm, 'value': item.value, 'icon': item.icon }
-
-      send_now = { 'type': 'container', 'title': target.title,  'inventory': inv }
+      
+      if len(inv.keys()) > 0:
+        send_now = { 'type': 'container', 'title': target.title,  'inventory': inv }
+      else:
+        send_now = { 'type': 'message', 'message': "There's nothing to take from the %s" % target.title }
     
     elif target.__class__.__name__ == 'Player':
       inv = {}
@@ -728,9 +770,8 @@ class Game:
     # Follow event queue
     for e in self.events[self.last_event:]:
       
-      if e['type'] == 'monstermove':
-        continue 
-      print "%s %s: %s" % (e['type'].upper(), e['zone'].upper(), e)
+      #print "%s %s: %s" % (e['type'].upper(), e['zone'].upper(), e)
+      pprint.pprint(e)
 
     self.last_event = len(self.events)
 
