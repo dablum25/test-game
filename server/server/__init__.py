@@ -11,9 +11,9 @@ from twisted.internet import reactor
 import os
 
 
-def start(source):
+def start():
 
-  game = Game(source)
+  game = Game()
   
   # Game event server
   endpoints.serverFromString(reactor, "tcp:10000").listen(GameFactory(game))
