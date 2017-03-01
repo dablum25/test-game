@@ -6,7 +6,6 @@ import pprint
 
 from twisted.internet import reactor
 
-from db import Db
 from player import Player,load_players
 from zone import Zone,load_zones
 from spell import Spell
@@ -19,9 +18,8 @@ from loot import Loot,load_loot
 
 class Game:
 
-  def __init__(self, source):
+  def __init__(self):
 
-    self.db = Db(source)
     
     # Events queue
     self.events = []
@@ -71,9 +69,6 @@ class Game:
 
     # Spells table
     self.spells = {}
-
-    #for warp in self.db.load_warps():
-    #  self.warps.append(Warp(**warp))
 
     
 

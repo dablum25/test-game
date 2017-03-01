@@ -1,3 +1,14 @@
+BUILD:
+
+Use pyinstaller for distribution:
+
+```
+pip install twisted
+pip install pytmx
+pip install pyinstaller
+pyinstaller --add-data data:data -n my_game_name game_server.py
+```
+
 TODO:
 * More work on quests
 * Gold currency
