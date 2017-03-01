@@ -14,7 +14,7 @@ from container import Container
 from item import Item
 from warp import Warp
 from shop import Shop,load_shops
-from quest import Quest
+from quest import Quest,load_quests
 from loot import Loot,load_loot
 
 class Game:
@@ -67,6 +67,7 @@ class Game:
 
     # Quests table
     self.quests = {}
+    load_quests(self)
 
     # Spells table
     self.spells = {}
