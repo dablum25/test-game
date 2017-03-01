@@ -3,6 +3,7 @@ from pyglet_gui.mixins import HighlightMixin
 from pyglet_gui.manager import Manager
 from pyglet_gui.buttons import Button, OneTimeButton, Checkbox, GroupButton
 from pyglet_gui.scrollable import Scrollable
+from pyglet_gui.document import Document
 from pyglet_gui.constants import ANCHOR_CENTER, HALIGN_LEFT, HALIGN_RIGHT, ANCHOR_RIGHT, ANCHOR_TOP_RIGHT, ANCHOR_BOTTOM_LEFT,ANCHOR_BOTTOM_RIGHT,ANCHOR_TOP
 from pyglet_gui.gui import Label,Graphic,Frame,PopupConfirm
 from pyglet_gui.text_input import TextInput
@@ -181,7 +182,7 @@ class CharacterManager(Manager):
     self.client.get_inventory()
 
   def questlog(self, toggle):
-    print "getting quests..."
+    self.client.get_questlog()
 
   def logout(self, toggle):
     print "logging out..."
@@ -325,8 +326,62 @@ class ContainerItem(HorizontalContainer):
                                      Label(str(arm), color=[100,255,100,255]),])
 
     take_button = OneTimeButton(label='Take', on_release=self.take) 
+    
     HorizontalContainer.__init__(self, [icon,title,gold,stats,take_button], align=HALIGN_LEFT)
 
   def take(self, toggle):
     self.client.take(self.name)
     self.delete()
+
+class QuestDialogManager(Manager):
+
+  def __init__(self, client, name, title, dialog):
+
+    self.client = client
+    self.name   = name
+    title       = Label(title, font_size=12)
+    dialog      = pyglet.text.decode_text(dialog)
+    document    = Document(dialog, width=300, height=100)
+
+
+    accept_button = OneTimeButton(label="Ok, I'll do it!", on_release=self.accept)
+    reject_button = OneTimeButton(label="No, Thanks.", on_release=self.reject)
+
+    text_container   = VerticalContainer([title,document])
+    button_container = HorizontalContainer([accept_button,reject_button])
+    quest_container  = VerticalContainer([text_container,button_container])
+    
+    Manager.__init__(self, Frame(quest_container, is_expandable=True), window=self.client.window, theme=UI_THEME, is_movable=True)
+
+  def accept(self, toggle):
+    self.client.accept_quest(self.name)
+    self.delete()
+
+  def reject(self, toggle):
+    self.delete()
+
+class QuestLogManager(Manager):
+
+  def __init__(self, client, quests):
+
+    self.client = client
+    
+    quest_list = []
+    for quest in quests:
+      quest_title = Label(quest['title'])
+      quest_container = HorizontalContainer([quest_title])
+      quest_list.append(quest_container)
+
+
+    close_button = OneTimeButton(label="Close", on_release=self.close)
+
+    quest_container = VerticalContainer(quest_list)
+    button_container = HorizontalContainer([close_button])
+
+    questlog_container = VerticalContainer([quest_container,button_container])
+
+    Manager.__init__(self, Frame(questlog_container, is_expandable=True), window=self.client.window, theme=UI_THEME, is_movable=True)
+
+  def close(self, toggle):
+    self.delete()
+

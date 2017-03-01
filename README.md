@@ -8,6 +8,10 @@ cd server
 ```
 
 
+Build and distribute:
+```
+```
+
 FEATURES:
  - Create maps using Tiled map editor (http://www.mapeditor.org/)
  - Spawn monsters
@@ -18,3 +22,6 @@ TODO:
  - Sound
  - Monster AI
  - content
+ - questing
+ - pc leveling
+ - magic

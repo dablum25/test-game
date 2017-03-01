@@ -1,12 +1,18 @@
 import pyglet
 from pytmx.util_pyglet import load_pyglet
-import pygletreactor
+
+# workaround for pyinstaller
+import sys
+if 'twisted.internet.reactor' in sys.modules:
+  del sys.modules['twisted.internet.reactor']
+
+from pigtwist import pygletreactor
 pygletreactor.install() # <- this must come before...
 from twisted.internet import reactor, task # <- ...importing this reactor!
 import pprint
 from twisted.protocols.ftp import FTPClient
 
-from ui import LoginManager,ConnectManager,ChatWindowManager,InventoryManager,ShopManager,CharacterManager,ContainerManager
+from ui import LoginManager,ConnectManager,ChatWindowManager,InventoryManager,ShopManager,CharacterManager,ContainerManager,QuestDialogManager,QuestLogManager
 from net import GameClientFactory,GameClientProtocol,GameData
 from game.game import Game
 from game.npc import Npc
@@ -30,6 +36,8 @@ class Client:
     self.popupManager = None
     self.characterManager = None
     self.containerManager = None
+    self.questDialogManager = None
+    self.questLogManager = None
     self.factory = GameClientFactory(self)
     self.protocol = None
     #self.sounds = SoundSet()
@@ -170,6 +178,12 @@ class Client:
       self.containerManager = ContainerManager(self, data['inventory'])
     elif data['type'] == 'questdialog':
       self.log(data)
+      self.questDialogManager = None
+      self.questDialogManager = QuestDialogManager(self, data['name'], data['title'], data['dialog'])
+    elif data['type'] == 'questlog':
+      self.log(data)
+      self.questLogManager = None
+      self.questLogManager = QuestLogManager(self, data['quests'])
     elif data['type'] == 'playerstats':
       self.log(data)
       self.characterManager = None
@@ -292,6 +306,10 @@ class Client:
 
     self.protocol.send({'action': 'use', 'item': item_name})
 
+  def accept_quest(self, quest_name):
+
+    self.protocol.send({'action': 'acceptquest', 'name': quest_name})
+
   def login(self):
     
     self.connectManager.delete()
@@ -331,6 +349,9 @@ class Client:
 
   def get_inventory(self):
     self.protocol.send({"action": "inventory"})
+   
+  def get_questlog(self):
+    self.protocol.send({"action": "questlog"})
     
   def help(self):
     print "Some help text...."
@@ -386,6 +407,12 @@ class Client:
       
       if self.containerManager:
         self.containerManager.draw()
+        
+      if self.questDialogManager:
+        self.questDialogManager.draw()
+        
+      if self.questLogManager:
+        self.questLogManager.draw()
          
     @self.window.event
     def on_mouse_press(x, y, button, modifiers):

@@ -12,9 +12,15 @@ def load_loot(world):
   for loot in config.sections():
     gold_min = config.getint(loot,'gold_min')
     gold_max = config.getint(loot,'gold_max')
+
     items_common = config.get(loot,'items_common').split(',')
+    items_common = filter(None, items_common)
+
     items_uncommon = config.get(loot,'items_uncommon').split(',')
+    items_uncommon = filter(None, items_uncommon)
+
     items_rare = config.get(loot,'items_rare').split(',')
+    items_rare = filter(None, items_rare)
     
     world.loot[loot] = Loot(loot, gold_min,gold_max,items_common,items_uncommon,items_rare)  
     

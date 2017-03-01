@@ -26,7 +26,7 @@ class Monster:
     self.title  = Monster.config.get(name,'title')
     self.level  = Monster.config.getint(name, 'level')
     self.source = Monster.config.get(name,'source')
-    self.hp     = [ Monster.config.getint(name, 'hp'), Monster.config.get(name,'hp') ]
+    self.hp     = [ Monster.config.getint(name, 'hp'), Monster.config.getint(name,'hp') ]
     self.hit    = Monster.config.getint(name, 'hit')
     self.arm    = Monster.config.getint(name, 'dam')
     self.dam    = Monster.config.getint(name, 'arm')

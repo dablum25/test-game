@@ -34,12 +34,16 @@ class Game:
     self.warps = []
 
     # Items table
-    #self.item_index = 0
     self.items = {}
+
+    # Player spawn location
+    self.player_spawn_x = 17
+    self.player_spawn_y = 11
+    self.player_spawn_zone = 'weltstone_farm'
 
     # Players table
     self.players = {}
-    load_players(self, 17, 11, 'weltstone_farm')
+    load_players(self, self.player_spawn_x, self.player_spawn_y, self.player_spawn_zone)
 
     # Monsters table
     self.monsters = {}
@@ -99,6 +103,9 @@ class Game:
     
     elif data['action'] == 'take':
       send_now = self.player_take(player_name, data['item'])
+    
+    elif data['action'] == 'acceptquest':
+      send_now = self.player_accept_quest(player_name, data['name'])
        
     elif data['action'] == 'settarget':
       send_now = self.set_player_target(player_name, data['x'], data['y'])
@@ -117,7 +124,10 @@ class Game:
 
     elif data['action'] == 'inventory':
       send_now = self.player_inventory(player_name)
-    
+   
+    elif data['action'] == 'questlog':
+      send_now = self.player_questlog(player_name)
+       
     elif data['action'] == 'playerstats':
       send_now = self.player_stats(player_name)
 
@@ -234,8 +244,8 @@ class Game:
       self.containers[container_name] = Container(title, container_name, x, y, zone, monster.target.name, source, 32, 32, 0, 0)
       self.events.append({'type': 'addcontainer', 'name': container_name, 'title': title, 'x': x, 'y': y, 'zone': zone, 'source': source, 'source_w': 32, 'source_h': 32, 'source_x': 0, 'source_y': 0})
     
-    # clean up container after 60 sec
-    reactor.callLater(60.0, self.cleanup_container, container_name)
+      # clean up container after 60 sec
+      reactor.callLater(60.0, self.cleanup_container, container_name)
     
     # Really delete monster
     monster.spawn.spawn_count -= 1
@@ -308,12 +318,11 @@ class Game:
     event = { 'type': 'addplayer' }
     player.hp[0] = player.hp[1]
     player.mode = 'wait'
-    player.x = 0
-    player.y = 0
-    player.spritex = 0
-    player.spritey = 0
-    player.destx = 0
-    player.desty = 0
+    player.x = self.player_spawn_x
+    player.y = self.player_spawn_y
+    player.destx = self.player_spawn_x
+    player.desty = self.player_spawn_y
+    player.zone  = self.player_spawn_zone
     event.update(player.state())
     self.events.append(event)
     
@@ -485,7 +494,8 @@ class Game:
       elif target.quest:
         if self.quests.has_key(target.quest):
           quest = self.quests[target.quest]
-          send_now = { 'type': 'questdialog', 'name': quest.name, 'title': quest.title, 'dialog': quest.dialog }
+          if quest.avaliable_to(player_name):
+            send_now = { 'type': 'questdialog', 'name': quest.name, 'title': quest.title, 'dialog': quest.dialog }
       
       elif target.villan:
         if self.in_attack_range(player, target):
@@ -515,6 +525,25 @@ class Game:
     
 
     return send_now
+
+
+  def player_accept_quest(self, player_name, quest_name):
+ 
+    send_now = {}
+     
+    if not self.quests.has_key(quest_name):
+      return send_now
+
+    return self.quests[quest_name].assign(player_name)
+
+
+  def player_questlog(self, player_name):
+
+    quests = []
+    for quest in self.players[player_name].quests.values():
+      quests.append(quest.get_log_entry())
+
+    return { 'type': 'questlog', 'quests': quests } 
 
   def player_buy(self, player_name, item_name):
 
@@ -808,6 +837,8 @@ class Game:
     # Follow event queue
     for e in self.events[self.last_event:]:
       if e['type'] == 'monstermove':
+        continue
+      if e['type'] == 'npcmove':
         continue
       print "EVENT %s: %s" % (e['type'], e)
 

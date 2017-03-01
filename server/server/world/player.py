@@ -80,6 +80,9 @@ class Player:
     # Schedule pathfollow task
     self.pathfollow_task = task.LoopingCall(self.pathfollow)
     self.pathfollow_task.start(0.50)
+   
+   
+    self.quests = {}
     
     print "Loaded PLAYER",self.state()
 
@@ -117,6 +120,10 @@ class Player:
       self.target = attacker
 
     self.hp[0] -= damage
+    
+    if self.hp[0] < 0:
+      self.hp[0] = 0
+
     self.world.events.append(self.world.player_stats(self.name))
 
   def warp(self, zone, x, y):
