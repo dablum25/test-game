@@ -16,7 +16,7 @@ class Monster:
     self.direction = 'south'
    
     self.title = title
-
+    self.speed = 2
     # Movement
     self.destx = self.x
     self.desty = self.y
@@ -60,11 +60,16 @@ class Monster:
     # Scheduel our update frequency
     pyglet.clock.schedule_interval(self.update, 1/120.0)
 
-  def go(self, direction, start):
+  def go(self, direction, start, speed):
     self.x = start[0]
     self.y = start[1]
     self.destx = start[0]
     self.desty = start[1]
+
+    if speed == 'fast':
+      self.speed = 4
+    elif speed == 'slow':
+      self.speed = 1
 
     if direction == 'north':
       self.desty += 1
@@ -105,7 +110,7 @@ class Monster:
     
     if self.direction == 'north':
       if self.spritey < self.desty * 32:
-        self.spritey += 1
+        self.spritey += self.speed
         self.action = 'walk'
       else:
         self.y = self.desty
@@ -114,7 +119,7 @@ class Monster:
 
     elif self.direction == 'south':
       if self.spritey > self.desty * 32:
-        self.spritey -= 1
+        self.spritey -= self.speed
         self.action = 'walk'
       else:
         self.y = self.desty
@@ -123,7 +128,7 @@ class Monster:
     
     elif self.direction == 'east':
       if self.spritex < self.destx * 32:
-        self.spritex += 1
+        self.spritex += self.speed
         self.action = 'walk'
       else:
         self.x = self.destx
@@ -132,7 +137,7 @@ class Monster:
     
     elif self.direction == 'west':
       if self.spritex > self.destx * 32:
-        self.spritex -= 1
+        self.spritex -= self.speed
         self.action = 'walk'
       else:
         self.x = self.destx

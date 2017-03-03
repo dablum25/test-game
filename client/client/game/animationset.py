@@ -1,7 +1,6 @@
 import pyglet
 from PIL import Image
 import sys
-from client.net import GameData
 
 class AnimationSet:
 
@@ -18,16 +17,6 @@ class AnimationSet:
     self.armor = armor
     self.head = head
     self.weapon = weapon
-    
-    # animation generate stuff
-    #source = "%s_%s_%s_%s_%s_%s.png" % ( self.gender, self.body, self.hair, self.armor, self.head, self.weapon )
-    
-    #if source not in self.cache:
-    #  # Download source png from ftp server
-    #  gd = GameData("characters/%s" % source, "data/characters/%s" % source)
-    #  self.cache.append(source)
-    
-    #raw = pyglet.image.load("data/characters/%s" % source)
     
     raw = None
     source = "%s_%s_%s_%s_%s_%s_%s" % ( self.gender, self.body, self.hairstyle, self.haircolor, self.armor, self.head, self.weapon )

@@ -62,7 +62,6 @@ class GameProtocol(basic.LineReceiver):
       userok = False
       passok = False
       if data:
-        print data
         if data['name'] in self.factory.world.players.keys():
           if not self.factory.world.players[data['name']].online:
             userok = True

@@ -32,9 +32,12 @@ class Monster:
     self.dam    = Monster.config.getint(name, 'arm')
     self.mode   = Monster.config.get(name, 'mode')
     self.loot   = Monster.config.get(name, 'loot')
+    
+    self.attack_speed  = Monster.config.getfloat(name, 'speed')
 
     self.target = None
 
+    self.ready_to_attack = True
 
     self.update_task = task.LoopingCall(self.update)
     self.update_task.start(1.0)
@@ -57,11 +60,14 @@ class Monster:
 
     if not self.target:
       self.target = attacker
-
-    self.mode = 'fighting'
+    
+    if self.mode in [ 'wander', 'wait' ]:
+      self.mode = 'fighting'
+    
     self.hp[0] -= damage
 
   def update(self):
+    
     # Are we dead:
     if self.hp[0] < 1:
       if self.mode != 'dead':
@@ -77,11 +83,10 @@ class Monster:
       if self.hp[0] > self.hp[1]:
         self.hp[0] = self.hp[1]
 
-    elif self.mode == 'wander':
-      # 33% chance we wander
-      #if random.choice([True, False, False]):
-      #  return
+      if self.hp[0] == self.hp[1]:
+        self.mode = 'wander'
 
+    elif self.mode == 'wander':
       if random.random() > 0.10:
         return
 
@@ -105,32 +110,105 @@ class Monster:
       if not self.world.zones[self.zone].open_at(self.x + x, self.y + y):
         return
       
-      self.world.events.append({'type': 'monstermove', 'name': self.name, 'zone': self.zone, 'direction': direction, 'start': (self.x,self.y), 'end': (self.x + x, self.y + y)})
+      self.world.events.append({'type': 'monstermove', 'speed': 'slow', 'name': self.name, 'zone': self.zone, 'direction': direction, 'start': (self.x,self.y), 'end': (self.x + x, self.y + y)})
       self.x += x
       self.y += y
     
     elif self.mode == 'fighting':
-      print "fighting", self.target.name
-      if self.target.mode == 'dead':
-        self.mode = 'wait'
-        self.target = None
-      
       if not self.target:
         self.mode = 'wait'
         return
       
-      tohit  = random.randint(1,20) + self.hit
-      damage = random.randint(1, self.dam)
-
-      player_arm = self.world.get_player_arm(self.target.name)
-
-      if tohit >= player_arm:
-        # It's a hit
-        self.world.events.append({'type': 'monsterattack', 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'title': self.title, 'target_title': self.target.title })
-        self.target.take_damage(self,damage)
+      if self.target.mode == 'dead':
+        self.mode = 'wait'
+        self.target = None
+        return
+      
+      # Are we in range of target
+      if not self.world.in_attack_range(self,self.target):
+        self.mode = 'chase'
+        return
+      else:
+        self.path = []
+     
+      if self.ready_to_attack:
+        self.attack() 
     
+    elif self.mode == 'chase':
+      # Move toward target
+      
+      if not self.target:
+        self.mode = 'wait'
+        return
+
+      if self.target.mode == 'dead':
+        self.mode = 'wait'
+        self.target = None
+        return
+
+      if self.world.in_attack_range(self,self.target):
+        self.mode = 'fighting'
+        return
+     
+      # get path to target
+      self.path = self.world.zones[self.zone].get_path((self.x,self.y),(self.target.x,self.target.y))
+
+      # stop right in front of target, not on top of him
+      del self.path[-1]
+
+      self.mode = 'pathfollow'
+
     elif self.mode == 'dead':
       pass
 
-    elif self.mode == 'flee':
-      pass
+    elif self.mode == 'wait':
+      if self.path:
+        self.mode = 'pathfollow'
+        return
+
+      if self.target:
+        self.mode = 'fighting'
+        return
+
+    elif self.mode == 'pathfollow':
+      if not self.path:
+        self.mode = 'wait'
+        return
+
+      dest = self.path.pop(0)
+      
+      if dest[0] > self.x:
+        self.direction = 'east'
+      elif dest[0] < self.x:
+        self.direction = 'west'
+      
+      if dest[1] > self.y:
+        self.direction = 'north'
+      elif dest[1] < self.y:
+        self.direction = 'south'  
+      
+      self.world.events.append({ 'type': 'monstermove', 'speed': 'fast', 'name': self.name, 'zone': self.zone, 'direction': self.direction, 'start': (self.x,self.y), 'end': dest })
+      self.x = dest[0]
+      self.y = dest[1]
+      
+      # set mode to waiting if path is now empty
+      if not self.path:
+        self.mode = 'wait'
+
+  def attack(self):
+    self.ready_to_attack = False
+    
+    tohit  = random.randint(1,20) + self.hit
+    damage = random.randint(1, self.dam)
+
+    player_arm = self.world.get_player_arm(self.target.name)
+
+    if tohit > player_arm:
+      # It's a hit
+      self.world.events.append({'type': 'monsterattack', 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'title': self.title, 'target_title': self.target.title })
+      self.target.take_damage(self,damage)
+    
+    reactor.callLater(self.attack_speed, self.reset_attack)
+
+  def reset_attack(self):
+    self.ready_to_attack = True

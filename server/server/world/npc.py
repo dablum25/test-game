@@ -42,9 +42,13 @@ class Npc:
     self.quest     = Npc.config.get(name, 'quest')
     self.villan    = Npc.config.getboolean(name, 'villan')
     self.loot      = Npc.config.get(name, 'loot')
+    self.attack_speed = Npc.config.getfloat(name, 'speed')
       
     self.attack_type = 'slash'
     self.target      = None 
+    self.path        = []
+
+    self.ready_to_attack = True
     
     if self.weapon in [ 'sword', 'wand' ]:
       self.attack_type = 'slash'
@@ -80,7 +84,10 @@ class Npc:
 
     if not self.target:
       self.target = attacker
-    self.mode = 'fighting'
+    
+    if self.mode in [ 'wander', 'wait' ]:
+      self.mode = 'fighting'
+    
     self.hp[0] -= damage
 
 
@@ -129,12 +136,11 @@ class Npc:
       if not self.world.zones[self.zone].open_at(self.x + x, self.y + y):
         return
       
-      self.world.events.append({'type': 'npcmove', 'name': self.name, 'zone': self.zone, 'direction': direction, 'start': (self.x,self.y), 'end': (self.x + x, self.y + y)})
+      self.world.events.append({'type': 'npcmove', 'speed': 'slow', 'name': self.name, 'zone': self.zone, 'direction': direction, 'start': (self.x,self.y), 'end': (self.x + x, self.y + y)})
       self.x += x
       self.y += y
     
     elif self.mode == 'fighting':
-      print "Fighting %s" % self.target.title
       if not self.target:
         self.mode = 'wait'
         return
@@ -144,27 +150,95 @@ class Npc:
         self.target = None
         return
     
+      # Are we in range of target
       if not self.world.in_attack_range(self,self.target):
-        print "not in range!"
-        # TODO: get path to target and move close enough to attack
+        self.mode = 'chase'
         return
-      
-      tohit  = random.randint(1,20) + self.hit
-      damage = random.randint(1, self.dam)
-      arm    = 0
-      
-      if self.target.__class__.__name__ == 'Player':
-        arm = self.world.get_player_arm(self.target.name)
       else:
-        arm = self.target.arm
-
-      if tohit >= arm:
-        # It's a hit
-        self.world.events.append({'type': 'npc'+self.attack_type, 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'title': self.title, 'target_title': self.target.title })
-        self.target.take_damage(self,damage)
-    
+        self.path = []
+     
+      if self.ready_to_attack:
+        self.attack()
+      
     elif self.mode == 'dead':
       pass
 
-    elif self.mode == 'flee':
+    elif self.mode == 'chase':
+      # Move toward target
+      
+      if not self.target:
+        self.mode = 'wait'
+        return
+
+      if self.target.mode == 'dead':
+        self.mode = 'wait'
+        self.target = None
+        return
+
+      if self.world.in_attack_range(self,self.target):
+        self.mode = 'fighting'
+        return
+     
+      # get path to target
+      self.path = self.world.zones[self.zone].get_path((self.x,self.y),(self.target.x,self.target.y))
+      del self.path[-1]
+      self.mode = 'pathfollow'
+
+    elif self.mode == 'dead':
       pass
+
+    elif self.mode == 'wait':
+      if self.path:
+        self.mode = 'pathfollow'
+        return
+
+      if self.target:
+        self.mode = 'fighting'
+        return
+
+    elif self.mode == 'pathfollow':
+      if not self.path:
+        self.mode = 'wait'
+        return
+
+      dest = self.path.pop(0)
+      
+      if dest[0] > self.x:
+        self.direction = 'east'
+      elif dest[0] < self.x:
+        self.direction = 'west'
+      
+      if dest[1] > self.y:
+        self.direction = 'north'
+      elif dest[1] < self.y:
+        self.direction = 'south'  
+      
+      self.world.events.append({ 'type': 'npcmove', 'speed': 'fast', 'name': self.name, 'zone': self.zone, 'direction': self.direction, 'start': (self.x,self.y), 'end': dest })
+      self.x = dest[0]
+      self.y = dest[1]
+      
+      # set mode to waiting if path is now empty
+      if not self.path:
+        self.mode = 'wait'
+
+  def attack(self):
+    self.ready_to_attack = False
+    
+    tohit  = random.randint(1,20) + self.hit
+    damage = random.randint(1, self.dam)
+    arm    = 0
+      
+    if self.target.__class__.__name__ == 'Player':
+      arm = self.world.get_player_arm(self.target.name)
+    else:
+      arm = self.target.arm
+
+    if tohit >= arm:
+      # It's a hit
+      self.world.events.append({'type': 'npc'+self.attack_type, 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'title': self.title, 'target_title': self.target.title })
+      self.target.take_damage(self,damage)
+    
+    reactor.callLater(self.attack_speed, self.reset_attack)
+
+  def reset_attack(self):
+    self.ready_to_attack = True

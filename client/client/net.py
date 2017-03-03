@@ -1,7 +1,6 @@
 from twisted.internet import reactor
 from twisted.internet.protocol import Protocol, ClientFactory, ClientCreator
 from twisted.protocols import basic
-from twisted.protocols.ftp import FTPClient, FTPFileListProtocol
 
 from StringIO import StringIO
 import json
@@ -64,43 +63,4 @@ class GameClientProtocol(basic.LineReceiver):
       print "Could load json",line
 
     self.client.process(data) 
-
-
-class SaveFile(Protocol):
-
-  def __init__(self, dest):
-    print "downloading %s" % dest
-    self.dest = dest
-    print "opening file %s" % self.dest
-    self.fout = open(self.dest,'w')
-    print "creating buffer"
-    self.buffer = StringIO()
-
-  def dataReceived(self, data):
-    sys.stdout.write('.')
-    sys.stdout.flush()
-    self.buffer.write(data)
-
-  def connectionLost(self, reason):
-    print 'done'
-    self.fout.write(self.buffer.getvalue())
-    self.fout.close()
-
-    # unzip data
-    if zipfile.is_zipfile(self.dest):
-      print "a zipfile!"
-      zipped_data = zipfile.ZipFile(self.dest)
-      zipped_data.extractall('data/')
-    
-class GameData:
-
-  host = 'localhost'
-  port = 10001
-
-  def __init__(self, src, dest):
-    self.creator = ClientCreator(reactor, FTPClient, 'anonymous', 'mmo@mmo')
-    self.creator.connectTCP(self.host, self.port).addCallback(self.getResources,src,dest)
-     
-  def getResources(self,ftpClient,src,dest):
-    ftpClient.retrieveFile(src, SaveFile(dest)) 
 

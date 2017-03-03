@@ -9,11 +9,10 @@ if 'twisted.internet.reactor' in sys.modules:
 from pigtwist import pygletreactor
 pygletreactor.install() # <- this must come before...
 from twisted.internet import reactor, task # <- ...importing this reactor!
-import pprint
 from twisted.protocols.ftp import FTPClient
 
 from ui import LoginManager,ConnectManager,ChatWindowManager,InventoryManager,ShopManager,CharacterManager,ContainerManager,QuestDialogManager,QuestLogManager
-from net import GameClientFactory,GameClientProtocol,GameData
+from net import GameClientFactory,GameClientProtocol
 from game.game import Game
 from game.npc import Npc
 from game.monster import Monster
@@ -93,11 +92,11 @@ class Client:
     elif data['type'] == 'npcmove':
       self.log(data)
       if self.game.npcs.has_key(data['name']):
-        self.game.npcs[data['name']].go(data['direction'],data['start'])
+        self.game.npcs[data['name']].go(data['direction'],data['start'],data['speed'])
     elif data['type'] == 'monstermove':
-      #self.log(data)
+      self.log(data)
       if self.game.monsters.has_key(data['name']):
-        self.game.monsters[data['name']].go(data['direction'],data['start'])
+        self.game.monsters[data['name']].go(data['direction'],data['start'],data['speed'])
     elif data['type'] == 'playerstop':
       self.log(data)
       if self.game.players.has_key(data['name']):
@@ -257,8 +256,7 @@ class Client:
       self.log(data)
 
   def log(self, data):
-
-    pprint.pprint("%s: %s" % (data['type'].upper(), data))
+    print "%s: %s" % (data['type'].upper(), data)
 
   def set_protocol(self, protocol):
     
@@ -266,10 +264,6 @@ class Client:
 
   def try_connect(self, server, port):
 
-    GameData.server = server
-    GameData.port = port + 1
-
-    #GameData('resources.zip', 'data/resources.zip')
     reactor.connectTCP(server, port, self.factory)
 
   def connected(self):
@@ -353,9 +347,6 @@ class Client:
   def get_questlog(self):
     self.protocol.send({"action": "questlog"})
     
-  def help(self):
-    print "Some help text...."
-
   def refresh(self):
     self.protocol.send({"action": "refresh"})
 

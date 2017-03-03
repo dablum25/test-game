@@ -2,7 +2,6 @@ import time
 import os,ConfigParser
 import random
 import math
-import pprint
 
 from twisted.internet import reactor
 
@@ -784,6 +783,16 @@ class Game:
         elif item.gear_type == 'spear':
           attack_type = 'thrust'
     return attack_type
+  
+  def get_player_attack_speed(self, player_name):
+    
+    attack_speed = 3.0
+    
+    for item_name,item in self.items.items():
+      if item.equipped and item.slot == 'weapon' and item.player == player_name:
+        attack_speed = item.speed
+
+    return attack_speed
 
   def get_distance_between(self, obj1, obj2):
     
@@ -807,7 +816,6 @@ class Game:
 
     elif attacker.__class__.__name__ == 'Npc':
       attack_type = attacker.attack_type
-      print attack_type, distance
       if attack_type == 'slash':
         if distance < 2:
           return True
@@ -819,7 +827,7 @@ class Game:
           return True
       
     elif attacker.__class__.__name__ == 'Monster':
-      # TODO: Give monsters an attack range
+      # TODO: Give individual monsters an attack range
       if distance < 2:
         return True
 
@@ -836,11 +844,9 @@ class Game:
     
     # Follow event queue
     for e in self.events[self.last_event:]:
-      if e['type'] == 'monstermove':
+      if e['type'] in ['playermove','npcmove','monstermove']:
         continue
-      if e['type'] == 'npcmove':
-        continue
-      print "EVENT %s: %s" % (e['type'], e)
+      #print "EVENT %s: %s" % (e['type'], e)
 
     self.last_event = len(self.events)
 

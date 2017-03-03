@@ -24,6 +24,7 @@ class Item:
     self.hit       = Item.config.getint(name, 'hit')
     self.dam       = Item.config.getint(name, 'dam')
     self.arm       = Item.config.getint(name, 'arm')
+    self.speed     = Item.config.getfloat(name, 'speed')
     self.icon      = Item.config.get(name,'icon')
     self.value     = Item.config.getint(name, 'value')
 
@@ -31,5 +32,5 @@ class Item:
 
   def state(self):
     
-    return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm, 'value': self.value }
+    return { 'title': self.title, 'name': self.name, 'slot': self.slot, 'equipped': self.equipped, 'gear_type': self.gear_type, 'icon': self.icon, 'hit': self.hit, 'dam': self.dam, 'arm': self.arm, 'speed': self.speed, 'value': self.value }
 

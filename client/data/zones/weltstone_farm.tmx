@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" nextobjectid="18">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" nextobjectid="19">
  <tileset firstgid="1" source="Terrain.tsx"/>
  <tileset firstgid="1025" name="grass" tilewidth="32" tileheight="32" tilecount="18" columns="3">
   <image source="../LPC Base Assets/tiles/grass.png" width="96" height="192"/>
@@ -322,6 +322,12 @@
     <property name="end_x" type="int" value="14"/>
     <property name="end_y" type="int" value="5"/>
     <property name="end_zone" value="farmhouse1"/>
+   </properties>
+  </object>
+  <object id="18" name="orc_fighter" type="npc_spawn" x="544" y="416" width="32" height="32">
+   <properties>
+    <property name="max_spawn" type="int" value="2"/>
+    <property name="spawn_delay" type="float" value="5"/>
    </properties>
   </object>
  </objectgroup>

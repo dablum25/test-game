@@ -80,6 +80,8 @@ class Player:
     # Schedule pathfollow task
     self.pathfollow_task = task.LoopingCall(self.pathfollow)
     self.pathfollow_task.start(0.50)
+  
+    self.ready_to_attack = True
    
    
     self.quests = {}
@@ -248,11 +250,12 @@ class Player:
             self.warp(end_zone.name, end_x, end_y)
 
     if self.mode == 'wait':
-      # heal 10% per second while waiting
+      # heal 5% per second while waiting
       if self.hp[0] < self.hp[1]:
-        self.hp[0] += self.hp[1]/10
+        self.hp[0] += self.hp[1]/20 + 1
       if self.mp[0] < self.mp[1]:
-        self.mp[0] += self.mp[1]/10
+        self.mp[0] += self.mp[1]/20 + 1
+
       # but dont go over!
       if self.hp[0] > self.hp[1]:
         self.hp[0] = self.hp[1]
@@ -270,19 +273,30 @@ class Player:
         self.target = None
         return
       
-      tohit  = random.randint(1,20) + self.world.get_player_hit(self.name)
-      damage = random.randint(1, self.world.get_player_dam(self.name))
-      attack = self.world.get_player_attack_type(self.name)
-
-      if tohit >= self.target.arm:
-        # It's a hit
-        self.world.events.append({'type': 'player'+attack, 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'target_title': self.target.title })
-        self.target.take_damage(self,damage)
-
+      if self.ready_to_attack:
+        self.attack()
+        
     elif self.mode == 'casting':
       pass
     
     elif self.mode == 'dead':
-      pass
+      self.path = []
+      self.target = None
 
+  def attack(self):
+    self.ready_to_attack = False
 
+    tohit  = random.randint(1,20) + self.world.get_player_hit(self.name)
+    damage = random.randint(1, self.world.get_player_dam(self.name))
+    attack = self.world.get_player_attack_type(self.name)
+
+    if tohit >= self.target.arm:
+      # It's a hit
+      self.world.events.append({'type': 'player'+attack, 'name': self.name, 'dam': damage, 'target': self.target.name, 'zone': self.zone, 'target_title': self.target.title })
+      self.target.take_damage(self,damage)
+    
+    attack_speed = self.world.get_player_attack_speed(self.name)
+    reactor.callLater(attack_speed, self.reset_attack)
+
+  def reset_attack(self):
+    self.ready_to_attack = True

@@ -20,7 +20,7 @@ class Npc:
     self.spritex = self.x * 32
     self.spritey = self.y * 32
 
-    self.speed = 2
+    self.speed = 1
 
     self.animation = AnimationSet(gender, body, hairstyle, haircolor, armor, head, weapon)
  
@@ -42,7 +42,7 @@ class Npc:
   def wait(self, dt=0):
     self.action = 'wait'
 
-  def go(self, direction, start):
+  def go(self, direction, start, speed):
 
     self.wait()
   
@@ -50,6 +50,12 @@ class Npc:
     self.y = start[1]
     self.destx = start[0]
     self.desty = start[1]
+    
+    if speed == 'fast':
+      self.speed = 4
+    elif speed == 'slow':
+      self.speed = 1
+
 
     if direction == 'north':
       self.desty += 1
