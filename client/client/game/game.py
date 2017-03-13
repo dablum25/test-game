@@ -45,6 +45,38 @@ class Game:
     # Set our label to green :)
     self.players[player_name].label.color = (0,255,0,255)
 
+  def calc_offset(self):
+    
+    px  = self.players[self.player_name].spritex
+    sx  = 840
+    hsx = sx/2
+    mx  = 960
+
+    py  = self.players[self.player_name].spritey
+    sy  = 680
+    hsy = sy/2
+    my  = 640
+    
+    
+    x = 0
+    y = 0
+
+    if px < hsx:
+      x = 0
+    elif px >= mx - hsx:
+      x = mx - sx
+    else:
+      x = px - hsx
+
+    if py > hsy:
+      y = 0 
+    elif py <= my - hsy:
+      y = my - sy
+    else:
+      y = py - hsy
+
+    return x,y
+
   def draw(self):
     if self.player_name == None:
       return
@@ -53,8 +85,11 @@ class Game:
       return
     
     if self.players.has_key(self.player_name):
-      self.offset = self.players[self.player_name].spritex - 320, self.players[self.player_name].spritey - 240
-    
+      
+      #self.offset = min(self.players[self.player_name].spritex - 320, self.players[self.player_name].spritey - 240
+      self.offset = self.calc_offset()
+
+
     for layer in self.zone.layers:
       if layer.name == 'character':
 

@@ -14,16 +14,18 @@ def load_quests(world):
     exp_reward = config.getint(name,'exp_reward')
     gold_reward = config.getint(name,'gold_reward')
     requires = config.get(name,'requires')
+    kill_target = config.get(name,'kill_target')
+    kill_count  = config.getint(name,'kill_count')
 
     
-    world.quests[name] = Quest(name, title, dialog, world, level, item_reward, exp_reward, gold_reward, requires)  
+    world.quests[name] = Quest(name, title, dialog, world, level, item_reward, exp_reward, gold_reward, requires, kill_target, kill_count)  
   
 
 class Quest:
   '''
   Generates PlayerQuest objects. Held by Npc.
   '''
-  def __init__(self, name, title, dialog, world, level, item_reward, exp_reward, gold_reward, requires):
+  def __init__(self, name, title, dialog, world, level, item_reward, exp_reward, gold_reward, requires, kill_target, kill_count):
 
     self.name        = name
     self.title       = title
@@ -34,6 +36,8 @@ class Quest:
     self.exp_reward  = exp_reward
     self.gold_reward = gold_reward
     self.requires    = requires
+    self.kill_target = kill_target
+    self.kill_count  = kill_count
 
     print "Loaded QUEST %s" % self.name
 
@@ -59,14 +63,14 @@ class Quest:
     if self.world.players[player_name].level < self.level:
       print "wrong level"
       return False
-
+    
     # player has completed prereqs
     if self.requires:
       if not self.world.players[player_name].quests.has_key(self.requires):
         print "don't have prereq"
         return False
 
-      if not self.world.players[player_name].quests[self.requires].is_complete:
+      if not self.world.players[player_name].quests[self.requires].is_complete():
         print "dont have prereq complete"
         return False
 
@@ -82,15 +86,28 @@ class PlayerQuest:
 
     self.name  = name
     self.world = world
-
+    
+    self.kill_count = 0
+    self.item_count = 0
+ 
+  def check_goal(self, target_name):
+    print target_name
+    if target_name == self.world.quests[self.name].kill_target:
+      self.kill_count += 1
   
   def is_complete(self):
     # Test if all goals are met
+   
+    if self.kill_count >= self.world.quests[self.name].kill_count:
+      return True
+
     return False
     
   def get_log_entry(self):
   
     title = self.world.quests[self.name].title
     dialog = self.world.quests[self.name].dialog
-    
-    return { 'title': title, 'dialog': dialog } 
+    target = self.world.quests[self.name].kill_target
+    count = [self.kill_count, self.world.quests[self.name].kill_count]
+
+    return { 'title': title, 'dialog': dialog, 'target': target, 'count': count } 

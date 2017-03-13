@@ -79,7 +79,7 @@ class Player:
     
     # Schedule pathfollow task
     self.pathfollow_task = task.LoopingCall(self.pathfollow)
-    self.pathfollow_task.start(0.50)
+    self.pathfollow_task.start(0.25)
   
     self.ready_to_attack = True
    

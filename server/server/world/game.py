@@ -208,6 +208,10 @@ class Game:
     # award exp to killer
     monster.target.exp += ( monster.level / monster.target.level ) * ( 10 * monster.level )
 
+    # check if this death satisfies quests
+    for quest in monster.target.quests.values():
+      quest.check_goals(monster.name)
+
     # create container object holding monster treasure
     container_name = "container-%s" % self.container_index 
     self.container_index += 1

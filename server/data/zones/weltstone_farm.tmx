@@ -295,13 +295,13 @@
  <objectgroup name="spawns">
   <object id="2" name="small_worm" type="monster_spawn" x="256" y="160" width="32" height="32">
    <properties>
-    <property name="max_spawn" type="int" value="4"/>
+    <property name="max_spawn" type="int" value="2"/>
     <property name="spawn_delay" type="float" value="15"/>
    </properties>
   </object>
   <object id="4" name="small_worm" type="monster_spawn" x="256" y="544" width="32" height="32">
    <properties>
-    <property name="max_spawn" type="int" value="4"/>
+    <property name="max_spawn" type="int" value="2"/>
     <property name="spawn_delay" type="float" value="15"/>
    </properties>
   </object>
@@ -322,12 +322,6 @@
     <property name="end_x" type="int" value="14"/>
     <property name="end_y" type="int" value="5"/>
     <property name="end_zone" value="farmhouse1"/>
-   </properties>
-  </object>
-  <object id="18" name="orc_fighter" type="npc_spawn" x="544" y="416" width="32" height="32">
-   <properties>
-    <property name="max_spawn" type="int" value="2"/>
-    <property name="spawn_delay" type="float" value="5"/>
    </properties>
   </object>
  </objectgroup>

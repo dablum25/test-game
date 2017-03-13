@@ -22,7 +22,7 @@ class Player:
     self.desty = self.y
     self.spritex = self.x * 32
     self.spritey = self.y * 32
-    self.speed = 4
+    self.speed = 6
     
     self.path = []
 
@@ -96,7 +96,6 @@ class Player:
     self.desty = end[1]
     self.spritex = self.x * 32
     self.spritey = self.y * 32
-    print self.x,self.y
 
   def update(self, dt):
     # Don't move if we are doing something else

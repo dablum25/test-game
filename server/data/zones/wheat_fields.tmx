@@ -223,7 +223,7 @@
  <objectgroup name="spawns">
   <object id="1" name="big_worm" type="monster_spawn" x="768" y="160" width="32" height="32">
    <properties>
-    <property name="max_spawn" type="int" value="3"/>
+    <property name="max_spawn" type="int" value="2"/>
     <property name="spawn_delay" type="float" value="15"/>
    </properties>
   </object>
@@ -235,7 +235,7 @@
   </object>
   <object id="3" name="big_worm" type="monster_spawn" x="192" y="160" width="32" height="32">
    <properties>
-    <property name="max_spawn" type="int" value="3"/>
+    <property name="max_spawn" type="int" value="2"/>
     <property name="spawn_delay" type="float" value="15"/>
    </properties>
   </object>

@@ -11,7 +11,6 @@ def load_zones(world):
   config = ConfigParser.RawConfigParser()
   config.read('data/zones.ini')
   
-  
   for name in config.sections():
     title = config.get(name,'title')
     source = config.get(name,'source')
