@@ -41,7 +41,7 @@ class Client:
     self.protocol = None
     #self.sounds = SoundSet()
    
-    #self.update_task = task.LoopingCall(self.player_stats)
+    self.update_task = task.LoopingCall(self.player_stats)
 
   def player_stats(self):
 
@@ -377,6 +377,7 @@ class Client:
 
     # Get player stats
     self.player_stats()
+    #self.update_task.start(3.0,now=True)
 
     @self.window.event
     def on_draw():
@@ -416,7 +417,7 @@ class Client:
 
       if button == pyglet.window.mouse.RIGHT:
         self.get_target(x,y)
-        self.activate()
+        #self.activate()
 
     @self.window.event
     def on_key_press(symbol, modifiers):

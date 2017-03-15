@@ -224,7 +224,7 @@
   <object id="8" name="to_wols" type="warp" x="544" y="320" width="32" height="32">
    <properties>
     <property name="end_x" type="int" value="13"/>
-    <property name="end_y" type="int" value="18"/>
+    <property name="end_y" type="int" value="16"/>
     <property name="end_zone" value="well_of_lost_souls"/>
    </properties>
   </object>

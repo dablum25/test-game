@@ -49,7 +49,7 @@ class Zone:
     for o in self.data.objects:
       if o.type == 'monster_spawn':
         x = int(o.x/32)
-        y = self.height - int(o.y/32)
+        y = self.height - int(o.y/32) - 1
         w = int(o.width/32)
         h = int(o.height/32)
         max_spawn = int(o.properties['max_spawn'])
@@ -61,7 +61,7 @@ class Zone:
       
       if o.type == 'npc_spawn':
         x = int(o.x/32)
-        y = self.height - int(o.y/32)
+        y = self.height - int(o.y/32) - 1
         w = int(o.width/32)
         h = int(o.height/32)
         max_spawn = int(o.properties['max_spawn'])
@@ -73,7 +73,7 @@ class Zone:
 
       if o.type == 'warp':
         x = int(o.x/32)
-        y = self.height - int(o.y/32)
+        y = self.height - int(o.y/32) - 1
         #w = int(o.width/32)
         #h = int(o.height/32)
         end_zone = o.properties['end_zone']

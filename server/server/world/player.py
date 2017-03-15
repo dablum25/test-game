@@ -129,7 +129,7 @@ class Player:
     self.world.events.append(self.world.player_stats(self.name))
 
   def warp(self, zone, x, y):
-    
+    print "Warping from",self.zone,self.x,self.y,"to",zone,x,y
     # Drop player
     self.world.events.append({ 'type': 'dropplayer', 'name': self.name, 'zone': self.zone })
     
@@ -200,7 +200,7 @@ class Player:
     # Are we on a warp tile?
     for warp in self.world.warps:
       if warp.start_x == self.x and warp.start_y == self.y and warp.start_zone == self.zone:
-        self.world.warp(self, warp)
+        self.warp(warp.end_zone,warp.end_x,warp.end_y)
    
    
     # Are we on the edge of the map? Then warp

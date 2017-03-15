@@ -54,10 +54,10 @@ class AnimationSet:
     self.sprites['wait']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[143:144], 1, True))
     self.sprites['wait']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[156:157], 1, True))
 
-    self.sprites['walk']['east'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[118:126], 0.125, True))
-    self.sprites['walk']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[131:139], 0.125, True))
-    self.sprites['walk']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[144:152], 0.125, True))
-    self.sprites['walk']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[157:165], 0.125, True))
+    self.sprites['walk']['east'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[118:126], 0.1, True))
+    self.sprites['walk']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[131:139], 0.1, True))
+    self.sprites['walk']['west'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[144:152], 0.1, True))
+    self.sprites['walk']['north'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[157:165], 0.1, True))
 
     self.sprites['thrust']['east'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[169:177], 0.166, True))
     self.sprites['thrust']['south'] = pyglet.sprite.Sprite(pyglet.image.Animation.from_image_sequence(grid[182:190], 0.166, True))
