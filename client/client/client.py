@@ -26,7 +26,7 @@ class Client:
   def __init__(self):
 
     self.game = Game()
-    self.window = pyglet.window.Window(840,680)
+    self.window = pyglet.window.Window(860,640)
     self.loginManager = LoginManager(self)
     self.connectManager = ConnectManager(self)
     self.chatManager = ChatWindowManager(self)
@@ -417,7 +417,7 @@ class Client:
 
       if button == pyglet.window.mouse.RIGHT:
         self.get_target(x,y)
-        #self.activate()
+        self.activate()
 
     @self.window.event
     def on_key_press(symbol, modifiers):

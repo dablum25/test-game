@@ -17,7 +17,6 @@ class Game:
     self.spells = []
     self.npcs = {}
     self.containers = {}
-
     self.player_inventory = []
 
   def load(self, player_name, zone_source, players, monsters, npcs, containers):
@@ -29,6 +28,24 @@ class Game:
     self.npcs = {}
     self.containers = {}
     self.offset = []
+
+    for layer in self.zone.layers:
+      if layer.name == 'character' or layer.name == 'blocked' or layer.name == 'block' or layer.name == 'spawns':
+        pass
+      else:
+        # create the batch for this layer
+        layer.batch = pyglet.graphics.Batch()
+        
+        # crate the sprite array for this layer
+        layer.sprites = []
+
+        for x, y, image in layer.tiles():
+          y = self.zone.height - y - 1
+          sprite = pyglet.sprite.Sprite(image, x * self.zone.tilewidth, y * self.zone.tileheight, batch=layer.batch)
+          sprite.orig_x = x
+          sprite.orig_y = y
+          layer.sprites.append(sprite)
+        
 
     for name,player in players.items():
       self.players[name] = Player(player['title'], player['gender'], player['body'], player['hairstyle'], player['haircolor'], player['armor'], player['head'], player['weapon'], player['x'], player['y'])
@@ -48,14 +65,14 @@ class Game:
   def calc_offset(self):
     
     px  = self.players[self.player_name].spritex
-    sx  = 840
+    sx  = 860
     hsx = sx/2
-    mx  = 960
+    mx  = self.zone.tilewidth * self.zone.width
 
     py  = self.players[self.player_name].spritey
-    sy  = 680
+    sy  = 640
     hsy = sy/2
-    my  = 640
+    my  = self.zone.tileheight * self.zone.height
     
     
     x = 0
@@ -86,14 +103,13 @@ class Game:
     
     if self.players.has_key(self.player_name):
       
-      #self.offset = min(self.players[self.player_name].spritex - 320, self.players[self.player_name].spritey - 240
       self.offset = self.calc_offset()
-
 
     for layer in self.zone.layers:
       if layer.name == 'character':
 
         for e in sorted( self.npcs.values() + self.monsters.values() + self.players.values() + self.containers.values(), key=lambda a: a.y, reverse=True):
+        #for e in (self.npcs.values() + self.monsters.values() + self.players.values() + self.containers.values()):
           if e == self.player_target:
             e.draw(self.offset, True)
           else:
@@ -103,16 +119,14 @@ class Game:
           if not spell.expired:
             spell.draw(self.offset)
 
-      if layer.name == 'blocked' or layer.name == 'block' or layer.name == 'spawns':
+      elif layer.name == 'blocked' or layer.name == 'block' or layer.name == 'spawns':
         # Don't draw the blocked layer
         pass
       else:
+        # Adjust sprite position for offset
+        for sprite in layer.sprites:
+          sprite.set_position(sprite.orig_x * self.zone.tilewidth - self.offset[0], 
+                              sprite.orig_y * self.zone.tileheight - self.offset[1])
         
-        for x, y, image in layer.tiles():
-          y = self.zone.height - y - 1
-          if x not in range(self.players[self.player_name].x - 30, self.players[self.player_name].x + 30):
-            continue
-          if y not in range(self.players[self.player_name].y - 30, self.players[self.player_name].y + 30):
-            continue
-          image.blit(x * self.zone.tilewidth - self.offset[0], y  * self.zone.tileheight - self.offset[1])
+        layer.batch.draw()
 

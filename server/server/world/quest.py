@@ -91,10 +91,11 @@ class PlayerQuest:
     self.item_count = 0
  
   def check_goal(self, target_name):
-    print target_name
-    if target_name == self.world.quests[self.name].kill_target:
+    target_name = target_name.split('-')
+    
+    if target_name[0] == self.world.quests[self.name].kill_target:
       self.kill_count += 1
-  
+     
   def is_complete(self):
     # Test if all goals are met
    

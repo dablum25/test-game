@@ -37,7 +37,7 @@ class Game:
 
     # Player spawn location
     self.player_spawn_x = 17
-    self.player_spawn_y = 11
+    self.player_spawn_y = 17
     self.player_spawn_zone = 'weltstone_farm'
 
     # Players table
@@ -150,7 +150,7 @@ class Game:
     end = x,y 
     player.path = zone.get_path(start,end)
     
-    #self.events.append({"type": "playerpath", "name": player_name, "path": player.path, "zone": player.zone})
+    self.events.append({"type": "playerpath", "name": player_name, "path": player.path, "zone": player.zone})
 
   def refresh(self, player_name):
 
@@ -210,7 +210,7 @@ class Game:
 
     # check if this death satisfies quests
     for quest in monster.target.quests.values():
-      quest.check_goals(monster.name)
+      quest.check_goal(monster.name)
 
     # create container object holding monster treasure
     container_name = "container-%s" % self.container_index 

@@ -88,7 +88,7 @@ class Player:
     self.action = 'die'
 
   def go(self, direction, start, end):
-    
+   
     self.direction = direction
     self.x = start[0]
     self.y = start[1]
@@ -96,12 +96,30 @@ class Player:
     self.desty = end[1]
     self.spritex = self.x * 32
     self.spritey = self.y * 32
+  
+  def pathfollow(self):
 
+    if self.action == 'wait':
+      if self.path:
+        dest = self.path.pop(0)
+        self.destx = dest[0]
+        self.desty = dest[1]
+        if dest[0] > self.x:
+          self.direction = 'east'
+        elif dest[0] < self.x:
+          self.direction = 'west'
+        if dest[1] > self.y:
+          self.direction = 'north'
+        elif dest[1] < self.y:
+          self.direction = 'south'
+   
   def update(self, dt):
     # Don't move if we are doing something else
     if self.action in [ 'slash', 'die', 'cast', 'thrust', 'die', 'bow' ]:
       return
-    
+  
+    self.pathfollow()
+   
     self.action = 'wait'
        
     if self.direction == 'north':

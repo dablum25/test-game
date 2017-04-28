@@ -164,7 +164,7 @@ class Player:
       elif dest[1] < self.y:
         self.direction = 'south'  
       
-      self.world.events.append({ 'type': 'playermove', 'name': self.name, 'zone': self.zone, 'direction': self.direction, 'start': (self.x,self.y), 'end': dest })
+      #self.world.events.append({ 'type': 'playermove', 'name': self.name, 'zone': self.zone, 'direction': self.direction, 'start': (self.x,self.y), 'end': dest })
       self.x = dest[0]
       self.y = dest[1]
       
